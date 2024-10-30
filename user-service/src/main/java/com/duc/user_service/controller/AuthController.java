@@ -106,12 +106,13 @@ public class AuthController {
         return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
     }
 
+    @PostMapping("/two-factor/otp/{otp}")
     public ResponseEntity<AuthResponse> verifySigningOtp(@PathVariable String otp, @RequestParam String id) throws Exception {
         TwoFactorOTP twoFactorOTP = twoFactorOTPService.findById(id);
 
         if(twoFactorOTPService.verifyTwoFactorOTP(twoFactorOTP, otp)) {
             AuthResponse res = AuthResponse.builder()
-                    .message("Two factor authentication verified")
+                    .message("Two-factor authentication verified successfully.")
                     .isTwoFactorAuthEnabled(true)
                     .jwt(twoFactorOTP.getJwt())
                     .build();
