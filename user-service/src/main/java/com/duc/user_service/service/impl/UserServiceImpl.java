@@ -7,6 +7,7 @@ import com.duc.user_service.repository.UserRepository;
 import com.duc.user_service.service.JwtService;
 import com.duc.user_service.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -15,6 +16,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public User findUserProfileByJwt(String jwt) throws Exception {
@@ -58,10 +60,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User updatePassword(User user, String oldPassword, String newPassword) throws Exception {
-        if(oldPassword.equals(user.getPassword())) {
-            user.setPassword(newPassword);
+        if(passwordEncoder.matches(oldPassword, user.getPassword())) {
+            user.setPassword(passwordEncoder.encode(newPassword));
             return userRepository.save(user);
         }
-        throw new Exception("Old passwrod is wrong");
+        throw new Exception("Old password is wrong");
+    }
+
+    @Override
+    public User resetPassword(User user, String newPassword) {
+        user.setPassword(passwordEncoder.encode(newPassword));
+        return userRepository.save(user);
     }
 }

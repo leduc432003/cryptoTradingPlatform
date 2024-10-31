@@ -1,5 +1,6 @@
 package com.duc.user_service.controller;
 
+import com.duc.user_service.dto.request.ChangePasswordRequest;
 import com.duc.user_service.model.User;
 import com.duc.user_service.model.VerificationCode;
 import com.duc.user_service.model.VerificationType;
@@ -37,7 +38,7 @@ public class UserController {
             verificationCodeService.deleteVerificationCodeById(verificationCode);
             return new ResponseEntity<>(updateUser, HttpStatus.OK);
         }
-        throw new Exception("wrong otp");
+        throw new Exception("otp is wrong");
     }
 
     @PostMapping("/verification/{verificationType}/send-otp")
@@ -53,5 +54,14 @@ public class UserController {
         }
 
         return new ResponseEntity<>("verification otp sent successfully.",HttpStatus.OK);
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<String> changePassword(@RequestHeader("Authorization") String jwt, @RequestBody ChangePasswordRequest request) throws Exception {
+        User user = userService.findUserProfileByJwt(jwt);
+
+        userService.updatePassword(user, request.getOldPassword(), request.getNewPassword());
+
+        return new ResponseEntity<>("changing password is successfully.",HttpStatus.OK);
     }
 }

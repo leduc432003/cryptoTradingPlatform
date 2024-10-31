@@ -9,4 +9,5 @@ public interface UserService {
     User findUserById(Long userId) throws Exception;
     User enableTwoFactorAuthentication(VerificationType verificationType, String sendTo, User user);
     User updatePassword(User user, String oldPassword, String newPassword) throws Exception;
+    User resetPassword(User user, String newPassword) throws Exception;
 }

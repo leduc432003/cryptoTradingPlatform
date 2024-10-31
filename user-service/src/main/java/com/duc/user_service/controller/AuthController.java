@@ -1,16 +1,16 @@
 package com.duc.user_service.controller;
 
+import com.duc.user_service.dto.request.ForgotPasswordRequest;
 import com.duc.user_service.dto.request.LoginRequest;
+import com.duc.user_service.dto.request.ResetPasswordRequest;
+import com.duc.user_service.dto.response.ApiResponse;
 import com.duc.user_service.dto.response.AuthResponse;
-import com.duc.user_service.model.TwoFactorOTP;
-import com.duc.user_service.model.User;
+import com.duc.user_service.model.*;
 import com.duc.user_service.repository.UserRepository;
-import com.duc.user_service.service.CustomerUserDetailService;
-import com.duc.user_service.service.EmailService;
-import com.duc.user_service.service.JwtService;
-import com.duc.user_service.service.TwoFactorOTPService;
+import com.duc.user_service.service.*;
 import com.duc.user_service.utils.OtpUtils;
 import lombok.RequiredArgsConstructor;
+import org.aspectj.weaver.patterns.IToken;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -18,16 +18,22 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RequestMapping("/api/auth")
 @RestController
 @RequiredArgsConstructor
 public class AuthController {
+    private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final CustomerUserDetailService customerUserDetailService;
     private final TwoFactorOTPService twoFactorOTPService;
     private final EmailService emailService;
+    private final UserService userService;
+    private final ForgotPasswordService forgotPasswordService;
 
     @PostMapping("/signup")
     public ResponseEntity<AuthResponse> register(@RequestBody User user) throws Exception {
@@ -37,7 +43,7 @@ public class AuthController {
         }
         User newUser = new User();
         newUser.setEmail(user.getEmail());
-        newUser.setPassword(user.getPassword());
+        newUser.setPassword(passwordEncoder.encode(user.getPassword()));
         newUser.setEmail(user.getEmail());
         newUser.setFullName(user.getFullName());
         User saveUser = userRepository.save(newUser);
@@ -100,7 +106,7 @@ public class AuthController {
         if(userDetails == null) {
             throw new BadCredentialsException("invalid username");
         }
-        if(!password.equals(userDetails.getPassword())) {
+        if(!passwordEncoder.matches(password, userDetails.getPassword())) {
             throw new BadCredentialsException("invalid password");
         }
         return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
@@ -114,10 +120,46 @@ public class AuthController {
             AuthResponse res = AuthResponse.builder()
                     .message("Two-factor authentication verified successfully.")
                     .isTwoFactorAuthEnabled(true)
+                    .status(true)
                     .jwt(twoFactorOTP.getJwt())
                     .build();
             return new ResponseEntity<>(res, HttpStatus.OK);
         }
         throw new Exception("invalid otp");
+    }
+
+    @PostMapping("/reset-password/send-otp")
+    public ResponseEntity<AuthResponse> sendForgotPasswordOTP(@RequestBody ForgotPasswordRequest request) throws Exception {
+        User user =  userService.findUserByEmail(request.getEmail());
+        String otp = OtpUtils.generateOtp();
+        UUID uuid = UUID.randomUUID();
+        String id = uuid.toString();
+        ForgotPasswordOTP forgotPasswordOTP = forgotPasswordService.findByUser(user.getId());
+        if(forgotPasswordOTP == null) {
+            forgotPasswordOTP = forgotPasswordService.createOTP(user, id, otp, request.getVerificationType(), request.getEmail());
+        }
+        if(request.getVerificationType().equals(VerificationType.EMAIL)) {
+            emailService.sendVerificationOtpEmail(user.getEmail(), forgotPasswordOTP.getOtp());
+        }
+        AuthResponse response = AuthResponse.builder()
+                .session(forgotPasswordOTP.getId())
+                .message("forgot password otp sent successfully.")
+                .build();
+        return new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
+    @PatchMapping("/reset-password/verify-otp/{otp}")
+    public ResponseEntity<ApiResponse> resetPassword(@RequestParam String id, @RequestBody ResetPasswordRequest request, @PathVariable String otp) throws Exception {
+        ForgotPasswordOTP forgotPasswordOTP = forgotPasswordService.findById(id);
+        boolean isVerified = forgotPasswordOTP.getOtp().equals(otp);
+        if(isVerified) {
+            userService.resetPassword(forgotPasswordOTP.getUser(), request.getPassword());
+            forgotPasswordService.deleteOTP(forgotPasswordOTP);
+            ApiResponse res = ApiResponse.builder()
+                    .messsage("password is updated successfully.")
+                    .build();
+            return new ResponseEntity<>(res, HttpStatus.ACCEPTED);
+        }
+        throw new Exception("otp is wrong");
     }
 }
