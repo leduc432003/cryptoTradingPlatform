@@ -1,6 +1,7 @@
 package com.duc.user_service.controller;
 
 import com.duc.user_service.dto.request.ChangePasswordRequest;
+import com.duc.user_service.dto.request.UserUpdateRequest;
 import com.duc.user_service.model.User;
 import com.duc.user_service.model.VerificationCode;
 import com.duc.user_service.model.VerificationType;
@@ -41,6 +42,20 @@ public class UserController {
         throw new Exception("otp is wrong");
     }
 
+    @PatchMapping("/disable-two-factor/verify-otp/{otp}")
+    public ResponseEntity<User> disableTwoFactorAuthentication(@RequestHeader("Authorization") String jwt, @PathVariable String otp) throws Exception {
+        User user = userService.findUserProfileByJwt(jwt);
+        VerificationCode verificationCode = verificationCodeService.getVerificationCodeByUser(user.getId());
+        String sendTo = verificationCode.getVerificationType().equals(VerificationType.EMAIL) ? verificationCode.getEmail() : verificationCode.getMobile();
+        boolean isVerified = verificationCode.getOtp().equals(otp);
+        if(isVerified) {
+            User updateUser = userService.disableTwoFactorAuthentication(verificationCode.getVerificationType(), sendTo, user);
+            verificationCodeService.deleteVerificationCodeById(verificationCode);
+            return new ResponseEntity<>(updateUser, HttpStatus.OK);
+        }
+        throw new Exception("otp is wrong");
+    }
+
     @PostMapping("/verification/{verificationType}/send-otp")
     public ResponseEntity<String> sendVerificationOTP(@RequestHeader("Authorization") String jwt, @PathVariable VerificationType verificationType) throws Exception {
         User user = userService.findUserProfileByJwt(jwt);
@@ -63,5 +78,14 @@ public class UserController {
         userService.updatePassword(user, request.getOldPassword(), request.getNewPassword());
 
         return new ResponseEntity<>("changing password is successfully.",HttpStatus.OK);
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<User> changePassword(@RequestHeader("Authorization") String jwt, @RequestBody UserUpdateRequest request) throws Exception {
+        User user = userService.findUserProfileByJwt(jwt);
+
+        User userUpdate = userService.updateUser(user.getId(), request);
+
+        return new ResponseEntity<>(userUpdate, HttpStatus.OK);
     }
 }

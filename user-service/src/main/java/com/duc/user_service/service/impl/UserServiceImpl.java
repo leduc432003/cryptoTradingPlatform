@@ -1,5 +1,6 @@
 package com.duc.user_service.service.impl;
 
+import com.duc.user_service.dto.request.UserUpdateRequest;
 import com.duc.user_service.model.TwoFactorAuth;
 import com.duc.user_service.model.User;
 import com.duc.user_service.model.VerificationType;
@@ -59,17 +60,40 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User updatePassword(User user, String oldPassword, String newPassword) throws Exception {
+    public User disableTwoFactorAuthentication(VerificationType verificationType, String sendTo, User user) {
+        TwoFactorAuth twoFactorAuth = new TwoFactorAuth();
+        twoFactorAuth.setEnable(false);
+        twoFactorAuth.setSendTo(verificationType);
+
+        user.setTwoFactorAuth(twoFactorAuth);
+        return userRepository.save(user);
+    }
+
+    @Override
+    public void updatePassword(User user, String oldPassword, String newPassword) throws Exception {
         if(passwordEncoder.matches(oldPassword, user.getPassword())) {
             user.setPassword(passwordEncoder.encode(newPassword));
-            return userRepository.save(user);
+            userRepository.save(user);
+            return;
         }
         throw new Exception("Old password is wrong");
     }
 
     @Override
-    public User resetPassword(User user, String newPassword) {
+    public void resetPassword(User user, String newPassword) {
         user.setPassword(passwordEncoder.encode(newPassword));
-        return userRepository.save(user);
+        userRepository.save(user);
+    }
+
+    @Override
+    public User updateUser(Long id, UserUpdateRequest updateUser) throws Exception {
+        User existingUser = findUserById(id);
+        if(updateUser.getFullName() != null) {
+            existingUser.setFullName(updateUser.getFullName());
+        }
+        if(updateUser.getMobile() != null) {
+            existingUser.setMobile(updateUser.getMobile());
+        }
+        return userRepository.save(existingUser);
     }
 }
