@@ -18,18 +18,25 @@ public class EmailService {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, "utf-8");
 
-        String subject = "Verify OTP";
-        String text = "Your verification code is " + otp;
-
-        mimeMessageHelper.setFrom("leanhduc04032003@gmail.com");
-        mimeMessageHelper.setSubject(subject);
-        mimeMessageHelper.setText(text);
-        mimeMessageHelper.setTo(email);
+        String subject = "Verify Your OTP";
+        String text = "<div style='font-family: Arial, sans-serif; text-align: center;'>" +
+                "<h2 style='color: #333;'>Xác thực tài khoản của bạn</h2>" +
+                "<p>Mã xác thực của bạn là:</p>" +
+                "<h3 style='color: #4CAF50;'>" + otp + "</h3>" +
+                "<p>Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email này.</p>" +
+                "</div>";
 
         try {
+            mimeMessageHelper.setFrom("leanhduc04032003@gmail.com");
+            mimeMessageHelper.setTo(email);
+            mimeMessageHelper.setSubject(subject);
+            mimeMessageHelper.setText(text, true);
+
             javaMailSender.send(mimeMessage);
         } catch (MailException e) {
-            throw new MailSendException(e.getMessage());
+            throw new MailSendException("Failed to send email: " + e.getMessage());
+        } catch (MessagingException e) {
+            throw new MessagingException("Error configuring email message: " + e.getMessage());
         }
     }
 }
