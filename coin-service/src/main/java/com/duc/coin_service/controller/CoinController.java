@@ -52,6 +52,13 @@ public class CoinController {
         return new ResponseEntity<>(jsonNode, HttpStatus.OK);
     }
 
+    @GetMapping("/{coinId}")
+    ResponseEntity<Coin> getCoinById(@PathVariable String coinId) throws Exception {
+        String coin = coinService.getCoinDetails(coinId);
+        Coin coin1 = coinService.findById(coinId);
+        return new ResponseEntity<>(coin1, HttpStatus.OK);
+    }
+
     @GetMapping("/trending")
     ResponseEntity<JsonNode> getTrendingCoin() throws Exception {
         String coin = coinService.getTrendingCoins();
