@@ -19,7 +19,7 @@ public class AssetController {
     private final UserService userService;
 
     @GetMapping("/{assetId}")
-    public ResponseEntity<Asset> getAssetById(@PathVariable Long assetId) throws Exception {
+    public ResponseEntity<Asset> getAssetById(@RequestHeader("Authorization") String jwt, @PathVariable Long assetId) throws Exception {
         Asset asset = assetService.getAssetById(assetId);
         return new ResponseEntity<>(asset, HttpStatus.OK);
     }
