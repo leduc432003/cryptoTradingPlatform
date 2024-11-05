@@ -69,5 +69,4 @@ public class Coin {
     private String roi;
     @JsonProperty("last_updated")
     private Date lastUpdated;
-
 }

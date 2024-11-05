@@ -1,4 +1,4 @@
-package com.duc.asset_service.dto;
+package com.duc.trading_service.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;

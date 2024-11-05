@@ -57,4 +57,9 @@ public class WalletServiceImpl implements WalletService {
         walletRepository.save(receiverWallet);
         return senderWallet;
     }
+
+    @Override
+    public Wallet payOrderPayment(Long orderId, Long userId) {
+        return null;
+    }
 }
