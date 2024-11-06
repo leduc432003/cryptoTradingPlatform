@@ -23,7 +23,7 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<Orders> payOrderPayment(@RequestHeader("Authorization") String jwt, @RequestBody CreateOrderRequest request) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
-        Orders order = orderService.processOrder(request.getCoinId(), request.getQuantity(), request.getOrderType(), user.getId());
+        Orders order = orderService.processOrder(request.getCoinId(), request.getQuantity(), request.getOrderType(), user.getId(), jwt);
         return new ResponseEntity<>(order, HttpStatus.OK);
     }
 

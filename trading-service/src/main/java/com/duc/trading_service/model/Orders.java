@@ -24,6 +24,12 @@ public class Orders {
     private LocalDateTime timestamp = LocalDateTime.now();
     @Column(nullable = false)
     private OrderStatus status;
+
     @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
     private OrderItem orderItem;
+
+    @Override
+    public String toString() {
+        return "Orders{id=" + id + ", userId=" + userId + ", orderType=" + orderType + ", price=" + price + ", status=" + status + "}";
+    }
 }

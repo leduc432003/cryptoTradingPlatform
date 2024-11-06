@@ -9,6 +9,7 @@ import com.duc.trading_service.repository.OrderRepository;
 import com.duc.trading_service.service.CoinService;
 import com.duc.trading_service.service.OrderItemService;
 import com.duc.trading_service.service.OrderService;
+import com.duc.trading_service.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final CoinService coinService;
     private final OrderItemService orderItemService;
+    private final WalletService walletService;
 
     @Override
     public Orders createOrder(Long userId, OrderItem orderItem, OrderType orderType) {
@@ -48,33 +50,34 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    @Transactional
-    public Orders processOrder(String coinId, double quantity, OrderType orderType, Long userId) throws Exception {
+    public Orders processOrder(String coinId, double quantity, OrderType orderType, Long userId, String jwt) throws Exception {
         if(orderType == OrderType.BUY) {
-            return buyAsset(coinId, quantity, userId);
+            return buyAsset(coinId, quantity, userId, jwt);
+        } else if (orderType == OrderType.SELL) {
+            return sellAsset(coinId, quantity, userId, jwt);
         }
         throw new Exception("order type is invalid");
     }
 
     @Override
     @Transactional
-    public Orders buyAsset(String coinId, double quantity, Long userId) throws Exception {
+    public Orders buyAsset(String coinId, double quantity, Long userId, String jwt) throws Exception {
         if(quantity <= 0) {
             throw new Exception("quantity must be > 0");
         }
-        CoinDTO coinDTO = coinService.getCoinById(coinId);
         double buyPrice = coinService.getCoinById(coinId).getCurrentPrice();
         OrderItem orderItem = orderItemService.createOrderItem(coinId, quantity, buyPrice, 0);
         Orders order = createOrder(userId, orderItem, OrderType.BUY);
         orderItem.setOrder(order);
-//        walletService.payOrderPayment(order);
+        walletService.payOrderPayment(jwt, order.getId());
         order.setStatus(OrderStatus.SUCCESS);
         order.setOrderType(OrderType.BUY);
         return orderRepository.save(order);
     }
 
     @Override
-    public Orders sellAsset(String coinId, double quantity, Long userId) throws Exception {
+    @Transactional
+    public Orders sellAsset(String coinId, double quantity, Long userId, String jwt) throws Exception {
         if(quantity <= 0) {
             throw new Exception("quantity must be > 0");
         }
@@ -82,7 +85,7 @@ public class OrderServiceImpl implements OrderService {
         OrderItem orderItem = orderItemService.createOrderItem(coinId, quantity, 0, sellPrice);
         Orders order = createOrder(userId, orderItem, OrderType.SELL);
         orderItem.setOrder(order);
-//        walletService.payOrderPayment(order);
+        walletService.payOrderPayment(jwt, order.getId());
         order.setStatus(OrderStatus.SUCCESS);
         order.setOrderType(OrderType.SELL);
         return orderRepository.save(order);

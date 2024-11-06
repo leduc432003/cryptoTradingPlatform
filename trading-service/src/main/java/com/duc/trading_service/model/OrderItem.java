@@ -18,7 +18,13 @@ public class OrderItem {
     private String coinId;
     private double buyPrice;
     private double sellPrice;
+
     @JsonIgnore
     @OneToOne
     private Orders order;
+
+    @Override
+    public String toString() {
+        return "OrderItem{id=" + id + ", quantity=" + quantity + ", coinId='" + coinId + "', buyPrice=" + buyPrice + "}";
+    }
 }

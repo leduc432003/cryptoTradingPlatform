@@ -7,5 +7,5 @@ public interface WalletService {
     Wallet addBalance(Wallet wallet, Long money);
     Wallet findWalletById(Long walletId) throws Exception;
     Wallet transferToAnotherWallet(Long senderId, Wallet receiverWallet, Long amount) throws Exception;
-    Wallet payOrderPayment(Long orderId, Long userId);
+    Wallet payOrderPayment(Long orderId, Long userId, String jwt) throws Exception;
 }

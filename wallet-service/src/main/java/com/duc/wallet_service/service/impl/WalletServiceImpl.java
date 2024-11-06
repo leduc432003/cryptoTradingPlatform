@@ -1,7 +1,10 @@
 package com.duc.wallet_service.service.impl;
 
+import com.duc.wallet_service.dto.OrderDTO;
+import com.duc.wallet_service.dto.OrderType;
 import com.duc.wallet_service.model.Wallet;
 import com.duc.wallet_service.repository.WalletRepository;
+import com.duc.wallet_service.service.OrderService;
 import com.duc.wallet_service.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,6 +16,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class WalletServiceImpl implements WalletService {
     private final WalletRepository walletRepository;
+    private final OrderService orderService;
 
     @Override
     public Wallet getWalletByUserId(Long userId) {
@@ -59,7 +63,19 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public Wallet payOrderPayment(Long orderId, Long userId) {
-        return null;
+    public Wallet payOrderPayment(Long orderId, Long userId, String jwt) throws Exception {
+        Wallet wallet = getWalletByUserId(userId);
+        OrderDTO order = orderService.getOrderById(jwt, orderId);
+        BigDecimal newBalance;
+        if(order.getOrderType().equals(OrderType.BUY)) {
+            newBalance = wallet.getBalance().subtract(order.getPrice());
+            if(newBalance.compareTo(order.getPrice()) < 0) {
+                throw new Exception("Not enough money for this transaction");
+            }
+        } else {
+            newBalance = wallet.getBalance().add(order.getPrice());
+        }
+        wallet.setBalance(newBalance);
+        return walletRepository.save(wallet);
     }
 }
