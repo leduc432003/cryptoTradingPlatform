@@ -1,6 +1,7 @@
 package com.duc.asset_service.controller;
 
 import com.duc.asset_service.dto.UserDTO;
+import com.duc.asset_service.dto.request.CreateAssetRequest;
 import com.duc.asset_service.model.Asset;
 import com.duc.asset_service.service.AssetService;
 import com.duc.asset_service.service.UserService;
@@ -18,8 +19,30 @@ public class AssetController {
     private final AssetService assetService;
     private final UserService userService;
 
+    @PostMapping
+    public ResponseEntity<Asset> createAsset(@RequestHeader("Authorization") String jwt, @RequestBody CreateAssetRequest request) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        Asset asset = assetService.createAsset(user.getId(), request.getCoinId(), request.getQuantity());
+        return new ResponseEntity<>(asset, HttpStatus.OK);
+    }
+
+    @PutMapping("/{assetId}")
+    public ResponseEntity<Asset> updateAsset(@RequestHeader("Authorization") String jwt, @PathVariable Long assetId, @RequestParam("quantity") double quantity) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        Asset asset = assetService.updateAsset(assetId, quantity);
+        return new ResponseEntity<>(asset, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{assetId}")
+    public ResponseEntity<String> deleteAsset(@RequestHeader("Authorization") String jwt, @PathVariable Long assetId) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        assetService.deleteAsset(assetId);
+        return new ResponseEntity<>("Delete asset successfully.", HttpStatus.OK);
+    }
+
     @GetMapping("/{assetId}")
     public ResponseEntity<Asset> getAssetById(@RequestHeader("Authorization") String jwt, @PathVariable Long assetId) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
         Asset asset = assetService.getAssetById(assetId);
         return new ResponseEntity<>(asset, HttpStatus.OK);
     }
