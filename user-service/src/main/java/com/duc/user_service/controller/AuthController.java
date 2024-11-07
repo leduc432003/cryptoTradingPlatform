@@ -39,7 +39,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(@RequestBody User user) throws Exception {
         User isEmailExist = userRepository.findByEmail(user.getEmail());
         if(isEmailExist != null) {
-            throw new Exception(("email is already used with another user"));
+            throw new Exception("email is already used with another user");
         }
         User newUser = new User();
         newUser.setEmail(user.getEmail());
