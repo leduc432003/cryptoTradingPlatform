@@ -10,6 +10,10 @@ spring:
 server:
   port: 5005
 
+internal:
+  service:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcmRlci1hc3NldCIsIm5hbWUiOiJkdWMiLCJpYXQiOjE1MTYyMzkwMjJ9.8g17YdNK8j7pAQX3sGF4s7ejIot77d9K6frZVZTo-Bk
+
 eureka:
   instance:
     prefer-ip-address: true

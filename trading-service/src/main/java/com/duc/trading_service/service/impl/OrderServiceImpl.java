@@ -1,7 +1,6 @@
 package com.duc.trading_service.service.impl;
 
 import com.duc.trading_service.dto.AssetDTO;
-import com.duc.trading_service.dto.CoinDTO;
 import com.duc.trading_service.dto.request.CreateAssetRequest;
 import com.duc.trading_service.model.Orders;
 import com.duc.trading_service.model.OrderItem;
@@ -10,6 +9,7 @@ import com.duc.trading_service.model.OrderType;
 import com.duc.trading_service.repository.OrderRepository;
 import com.duc.trading_service.service.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +25,8 @@ public class OrderServiceImpl implements OrderService {
     private final OrderItemService orderItemService;
     private final WalletService walletService;
     private final AssetService assetService;
+    @Value("${internal.service.token}")
+    private String internalServiceToken;
 
     @Override
     public Orders createOrder(Long userId, OrderItem orderItem, OrderType orderType) {
@@ -77,11 +79,12 @@ public class OrderServiceImpl implements OrderService {
 
         if(oldAsset == null) {
             CreateAssetRequest request = new CreateAssetRequest();
+            request.setUserId(userId);
             request.setCoinId(coinId);
             request.setQuantity(quantity);
-            assetService.createAsset(jwt, request);
+            assetService.createAsset(internalServiceToken, request);
         } else {
-            assetService.updateAsset(jwt, oldAsset.getId(), quantity);
+            assetService.updateAsset(internalServiceToken, oldAsset.getId(), quantity);
         }
 
         return orderRepository.save(order);
@@ -106,9 +109,9 @@ public class OrderServiceImpl implements OrderService {
                 order.setOrderType(OrderType.SELL);
                 Orders saveOrder = orderRepository.save(order);
                 walletService.payOrderPayment(jwt, order.getId());
-                AssetDTO updateAsset = assetService.updateAsset(jwt, assetToSell.getId(), -quantity);
+                AssetDTO updateAsset = assetService.updateAsset(internalServiceToken, assetToSell.getId(), -quantity);
                 if(updateAsset.getQuantity() * sellPrice <= 0) {
-                    assetService.deleteAsset(jwt, updateAsset.getId());
+                    assetService.deleteAsset(internalServiceToken, updateAsset.getId());
                 }
                 return saveOrder;
             }

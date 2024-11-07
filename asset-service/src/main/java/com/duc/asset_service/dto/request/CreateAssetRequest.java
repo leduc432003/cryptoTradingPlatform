@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateAssetRequest {
+    private Long userId;
     private String coinId;
     private double quantity;
 }
