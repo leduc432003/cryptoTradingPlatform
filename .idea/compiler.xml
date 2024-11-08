@@ -15,6 +15,7 @@
         <module name="asset-service" />
         <module name="wallet-service" />
         <module name="trading-service" />
+        <module name="gateway" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -27,6 +28,7 @@
       <module name="coin-service" options="-parameters" />
       <module name="config-server" options="-parameters" />
       <module name="discovery" options="-parameters" />
+      <module name="gateway" options="-parameters" />
       <module name="trading-service" options="-parameters" />
       <module name="user-service" options="-parameters" />
       <module name="wallet-service" options="-parameters" />

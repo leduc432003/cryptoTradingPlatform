@@ -13,6 +13,7 @@
         <option value="$PROJECT_DIR$/trading-service/pom.xml" />
         <option value="$PROJECT_DIR$/withdraw-service/pom.xml" />
         <option value="$PROJECT_DIR$/withdrawal-service/pom.xml" />
+        <option value="$PROJECT_DIR$/gateway/pom.xml" />
       </list>
     </option>
   </component>
