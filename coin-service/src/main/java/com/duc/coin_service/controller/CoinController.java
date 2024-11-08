@@ -31,6 +31,13 @@ public class CoinController {
         return new ResponseEntity<>(jsonNode, HttpStatus.OK);
     }
 
+    @GetMapping("/{coinId}/ohlc")
+    ResponseEntity<JsonNode> getCoinOHLCChar(@PathVariable String coinId, @RequestParam("days") int days) throws Exception {
+        String coin = coinService.getOHLCChar(coinId, days);
+        JsonNode jsonNode = objectMapper.readTree(coin);
+        return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    }
+
     @GetMapping("/top50")
     ResponseEntity<JsonNode> getTop50CoinByMarketCapRank() throws Exception {
         String coin = coinService.getTop50CoinsByMarketCapRank();
