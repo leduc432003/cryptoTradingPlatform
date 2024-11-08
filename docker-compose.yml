@@ -10,7 +10,7 @@ services:
       - '3307:3306'
     volumes:
       - ./init:/docker-entrypoint-initdb.d
-
+      - db-data:/var/lib/mysql
 volumes:
   db-data:
     driver: local

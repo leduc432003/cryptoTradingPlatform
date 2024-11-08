@@ -3,16 +3,15 @@ spring:
     hibernate:
       ddl-auto: update
   datasource:
-    url: jdbc:mysql://localhost:3307/kltn_trading_service?allowPublicKeyRetrieval=true&useSSL=false
+    url: jdbc:mysql://localhost:3307/kltn_withdrawal_service?allowPublicKeyRetrieval=true&useSSL=false
     username: root
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
 server:
-  port: 5006
-
+  port: 5007
 internal:
   service:
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcmRlci1hc3NldCIsIm5hbWUiOiJkdWMiLCJpYXQiOjE1MTYyMzkwMjJ9.8g17YdNK8j7pAQX3sGF4s7ejIot77d9K6frZVZTo-Bk
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0aGVtIHJ1dCB0aWVuIiwibmFtZSI6ImR1YyIsImlhdCI6NDMyMDAzfQ.L1HlqgP2FBfE3DNXtJsFbkpg8TF82QUaUi7DCVb-4mM
 
 eureka:
   instance:

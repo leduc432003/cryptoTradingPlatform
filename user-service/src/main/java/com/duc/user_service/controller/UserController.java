@@ -81,7 +81,7 @@ public class UserController {
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<User> changePassword(@RequestHeader("Authorization") String jwt, @RequestBody UserUpdateRequest request) throws Exception {
+    public ResponseEntity<User> updateUser(@RequestHeader("Authorization") String jwt, @RequestBody UserUpdateRequest request) throws Exception {
         User user = userService.findUserProfileByJwt(jwt);
 
         User userUpdate = userService.updateUser(user.getId(), request);

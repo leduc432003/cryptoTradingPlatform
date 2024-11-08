@@ -1,11 +1,13 @@
 package com.duc.wallet_service.controller;
 
 import com.duc.wallet_service.dto.UserDTO;
+import com.duc.wallet_service.dto.request.AddBalanceRequest;
 import com.duc.wallet_service.model.Wallet;
 import com.duc.wallet_service.model.WalletTransaction;
 import com.duc.wallet_service.service.UserService;
 import com.duc.wallet_service.service.WalletService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +18,18 @@ import org.springframework.web.bind.annotation.*;
 public class WalletController {
     private final WalletService walletService;
     private final UserService userService;
+    @Value("${internal.service.token}")
+    private String internalServiceToken;
+
+    @PostMapping
+    public ResponseEntity<Wallet> addBalance(@RequestHeader("Internal-Service-Token") String internalJwt, @RequestBody AddBalanceRequest request) {
+        if (!internalServiceToken.equals(internalJwt)) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+        Wallet wallet = walletService.getWalletByUserId(request.getUserId());
+        walletService.addBalance(wallet, request.getMoney());
+        return new ResponseEntity<>(wallet, HttpStatus.OK);
+    }
 
     @GetMapping
     public ResponseEntity<Wallet> getUserWallet(@RequestHeader("Authorization") String jwt) {

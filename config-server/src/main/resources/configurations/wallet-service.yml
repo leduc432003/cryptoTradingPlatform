@@ -3,12 +3,15 @@ spring:
     hibernate:
       ddl-auto: update
   datasource:
-    url: jdbc:mysql://localhost:3306/kltn_wallet_service?allowPublicKeyRetrieval=true&useSSL=false
+    url: jdbc:mysql://localhost:3307/kltn_wallet_service?allowPublicKeyRetrieval=true&useSSL=false
     username: root
-    password: duc432003
+    password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
 server:
   port: 5004
+internal:
+  service:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0aGVtIHJ1dCB0aWVuIiwibmFtZSI6ImR1YyIsImlhdCI6NDMyMDAzfQ.L1HlqgP2FBfE3DNXtJsFbkpg8TF82QUaUi7DCVb-4mM
 
 eureka:
   instance:
