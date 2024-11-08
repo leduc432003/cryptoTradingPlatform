@@ -19,6 +19,7 @@ public class User {
     private String fullName;
     private String email;
     private String mobile;
+    private String avatar;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     @Embedded

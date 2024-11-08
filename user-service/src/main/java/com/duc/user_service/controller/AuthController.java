@@ -44,7 +44,8 @@ public class AuthController {
         User newUser = new User();
         newUser.setEmail(user.getEmail());
         newUser.setPassword(passwordEncoder.encode(user.getPassword()));
-        newUser.setEmail(user.getEmail());
+        newUser.setMobile(user.getMobile());
+        newUser.setAvatar("https://robohash.org/" + user.getFullName() + "?size=200x200");
         newUser.setFullName(user.getFullName());
         User saveUser = userRepository.save(newUser);
 
