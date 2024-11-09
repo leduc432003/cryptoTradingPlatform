@@ -72,4 +72,21 @@ public class CoinController {
         JsonNode jsonNode = objectMapper.readTree(coin);
         return new ResponseEntity<>(jsonNode, HttpStatus.OK);
     }
+
+    @GetMapping("/global")
+    ResponseEntity<JsonNode> getGlobal() throws Exception {
+        String coin = coinService.getGlobal();
+        JsonNode jsonNode = objectMapper.readTree(coin);
+        return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    }
+
+    @GetMapping("/categories")
+    ResponseEntity<JsonNode> getCategoriesList(@RequestParam(required = false) String order) throws Exception {
+        if(order == null) {
+            order = "";
+        }
+        String coin = coinService.getCategoriesList(order);
+        JsonNode jsonNode = objectMapper.readTree(coin);
+        return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    }
 }

@@ -41,7 +41,7 @@ public class CoinServiceImpl implements CoinService {
 
     @Override
     public List<Coin> getCoinList(int page) throws Exception {
-        String url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=10&page=" + page;
+        String url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=50&price_change_percentage=1h%2C7d&page=" + page;
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -129,6 +129,8 @@ public class CoinServiceImpl implements CoinService {
                     .priceChangePercentage24h(marketData.get("price_change_percentage_24h").asDouble())
                     .marketCapChange24h(marketData.get("market_cap_change_24h").asLong())
                     .marketCapChangePercentage24h((marketData.get("market_cap_change_percentage_24h").asDouble()))
+                    .priceChangePercentage1hInCurrency(marketData.get("price_change_percentage_1h_in_currency").get("usd").asDouble())
+                    .priceChangePercentage7dInCurrency(marketData.get("price_change_percentage_7d_in_currency").get("usd").asDouble())
                     .maxSupply(marketData.get("max_supply").asLong())
                     .totalSupply(marketData.get("total_supply").asLong())
                     .ath(marketData.get("ath").get("usd").asLong())
@@ -200,7 +202,7 @@ public class CoinServiceImpl implements CoinService {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Accept", "application/json")
-                    .header("x-cg-demo-api-key", API_KEY) // Nếu cần thiết, thêm API key vào header
+                    .header("x-cg-demo-api-key", API_KEY)
                     .GET()
                     .build();
 
@@ -233,6 +235,44 @@ public class CoinServiceImpl implements CoinService {
     @Override
     public String getTrendingCoins() throws Exception {
         String url = "https://api.coingecko.com/api/v3/search/trending";
+
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Accept", "application/json")
+                    .header("x-cg-demo-api-key", API_KEY)
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            return response.body();
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    @Override
+    public String getGlobal() throws Exception {
+        String url = "https://api.coingecko.com/api/v3/global";
+
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Accept", "application/json")
+                    .header("x-cg-demo-api-key", API_KEY)
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            return response.body();
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    @Override
+    public String getCategoriesList(String order) throws Exception {
+        String url = "https://api.coingecko.com/api/v3/coins/categories?order=" + order;
 
         try {
             HttpRequest request = HttpRequest.newBuilder()
