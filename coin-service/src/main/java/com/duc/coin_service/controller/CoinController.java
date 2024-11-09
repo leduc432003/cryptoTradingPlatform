@@ -31,6 +31,13 @@ public class CoinController {
         return new ResponseEntity<>(jsonNode, HttpStatus.OK);
     }
 
+    @GetMapping("/{coinId}/chart/range")
+    ResponseEntity<JsonNode> getCoinHistoricalChartDataRange(@PathVariable String coinId, @RequestParam("from") long from, @RequestParam("to") long to) throws Exception {
+        String coin = coinService.getMarketChartRange(coinId, from, to);
+        JsonNode jsonNode = objectMapper.readTree(coin);
+        return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    }
+
     @GetMapping("/{coinId}/ohlc")
     ResponseEntity<JsonNode> getCoinOHLCChar(@PathVariable String coinId, @RequestParam("days") int days) throws Exception {
         String coin = coinService.getOHLCChar(coinId, days);

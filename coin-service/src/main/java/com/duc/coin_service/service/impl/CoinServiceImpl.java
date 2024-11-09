@@ -80,6 +80,25 @@ public class CoinServiceImpl implements CoinService {
     }
 
     @Override
+    public String getMarketChartRange(String coinId, long from, long to) throws Exception {
+        String url = "https://api.coingecko.com/api/v3/coins/" + coinId + "/market_chart/range?vs_currency=usd&from=" + from + "&to=" + to;
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Accept", "application/json")
+                    .header("x-cg-demo-api-key", API_KEY)
+                    .GET()
+                    .build();
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            return response.body();
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    @Override
     public String getOHLCChar(String coinId, int days) throws Exception {
         String url = "https://api.coingecko.com/api/v3/coins/" + coinId + "/ohlc?vs_currency=usd&days=" + days;
         try {
