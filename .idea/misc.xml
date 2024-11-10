@@ -14,6 +14,7 @@
         <option value="$PROJECT_DIR$/withdraw-service/pom.xml" />
         <option value="$PROJECT_DIR$/withdrawal-service/pom.xml" />
         <option value="$PROJECT_DIR$/gateway/pom.xml" />
+        <option value="$PROJECT_DIR$/watchlist-service/pom.xml" />
       </list>
     </option>
   </component>

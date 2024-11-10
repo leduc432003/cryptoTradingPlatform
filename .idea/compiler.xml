@@ -13,6 +13,7 @@
         <module name="discovery" />
         <module name="user-service" />
         <module name="asset-service" />
+        <module name="watchlist-service" />
         <module name="wallet-service" />
         <module name="trading-service" />
         <module name="gateway" />
@@ -32,6 +33,7 @@
       <module name="trading-service" options="-parameters" />
       <module name="user-service" options="-parameters" />
       <module name="wallet-service" options="-parameters" />
+      <module name="watchlist-service" options="-parameters" />
       <module name="withdraw-service" options="-parameters" />
       <module name="withdrawal-service" options="-parameters" />
     </option>
