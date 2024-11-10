@@ -15,14 +15,14 @@ public class WatchlistServiceImpl implements WatchlistService {
     private final WatchlistRepository watchlistRepository;
 
     @Override
-    public Watchlist createWatchList(Long userId) {
+    public Watchlist createWatchlist(Long userId) {
         Watchlist watchlist = new Watchlist();
         watchlist.setUserId(userId);
         return watchlistRepository.save(watchlist);
     }
 
     @Override
-    public List<Watchlist> findUserWatchList(Long userId) throws Exception {
+    public List<Watchlist> findUserWatchlist(Long userId) throws Exception {
         List<Watchlist> watchlist = watchlistRepository.findByUserId(userId);
         if(watchlist == null) {
             throw new Exception("Watchlist not found.");
@@ -40,10 +40,22 @@ public class WatchlistServiceImpl implements WatchlistService {
     }
 
     @Override
-    public String addItemToWatchList(String coinId, Long userId, Long watchlistId) throws Exception {
+    public String addItemToWatchList(String coinId, Long watchlistId) throws Exception {
         Watchlist watchlist = findById(watchlistId);
         watchlist.getCoinIds().add(coinId);
         watchlistRepository.save(watchlist);
         return coinId;
+    }
+
+    @Override
+    public void deleteWatchlist(Long id) {
+        watchlistRepository.deleteById(id);
+    }
+
+    @Override
+    public void deleteItemToWatchlist(String coinId, Long watchlistId) throws Exception {
+        Watchlist watchlist = findById(watchlistId);
+        watchlist.getCoinIds().remove(coinId);
+        watchlistRepository.save(watchlist);
     }
 }

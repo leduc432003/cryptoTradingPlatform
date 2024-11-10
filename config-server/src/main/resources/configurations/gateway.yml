@@ -1,0 +1,58 @@
+server:
+  port: 5000
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri:
+            lb://user-service
+          predicates:
+            - Path=/api/auth/**, /users/**, /api/users/**
+        - id: asset-service
+          uri:
+            lb://asset-service
+          predicates:
+            - Path=/api/asset/**
+        - id: coin-service
+          uri:
+            lb://coin-service
+          predicates:
+            - Path=/api/coins/**
+        - id: trading-service
+          uri:
+            lb://trading-service
+          predicates:
+            - Path=/api/orders/**
+        - id: wallet-service
+          uri:
+            lb://wallet-service
+          predicates:
+            - Path=/api/wallet/**
+        - id: watchlist-service
+          uri:
+            lb://watchlist-service
+          predicates:
+            - Path=/api/watchlist/**
+        - id: withdrawal-service
+          uri:
+            lb://withdrawal-service
+          predicates:
+            - Path=/api/withdrawal/**
+
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+
+eureka:
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
