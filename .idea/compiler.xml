@@ -9,6 +9,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="withdrawal-service" />
         <module name="config-server" />
+        <module name="payment-service" />
         <module name="coin-service" />
         <module name="discovery" />
         <module name="user-service" />
@@ -30,6 +31,7 @@
       <module name="config-server" options="-parameters" />
       <module name="discovery" options="-parameters" />
       <module name="gateway" options="-parameters" />
+      <module name="payment-service" options="-parameters" />
       <module name="trading-service" options="-parameters" />
       <module name="user-service" options="-parameters" />
       <module name="wallet-service" options="-parameters" />

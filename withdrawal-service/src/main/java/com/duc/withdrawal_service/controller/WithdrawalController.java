@@ -61,4 +61,15 @@ public class WithdrawalController {
 
         return new ResponseEntity<>(withdrawalList, HttpStatus.OK);
     }
+
+    @GetMapping("/admin")
+    public ResponseEntity<List<Withdrawal>> getAllWithdrawalHistory(@RequestHeader("Authorization") String jwt) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        if(!user.getRole().equals(UserRole.ROLE_ADMIN)) {
+            throw new Exception("Only admin can watch withdrawal");
+        }
+        List<Withdrawal> withdrawalList = withdrawalService.getAllWithdrawalRequest();
+
+        return new ResponseEntity<>(withdrawalList, HttpStatus.OK);
+    }
 }

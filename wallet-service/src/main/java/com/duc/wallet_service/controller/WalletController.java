@@ -4,8 +4,10 @@ import com.duc.wallet_service.dto.UserDTO;
 import com.duc.wallet_service.dto.request.AddBalanceRequest;
 import com.duc.wallet_service.model.Wallet;
 import com.duc.wallet_service.model.WalletTransaction;
+import com.duc.wallet_service.model.WalletTransactionType;
 import com.duc.wallet_service.service.UserService;
 import com.duc.wallet_service.service.WalletService;
+import com.duc.wallet_service.service.WalletTransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,7 @@ public class WalletController {
     private final UserService userService;
     @Value("${internal.service.token}")
     private String internalServiceToken;
+    private final WalletTransactionService walletTransactionService;
 
     @PostMapping
     public ResponseEntity<Wallet> addBalance(@RequestHeader("Internal-Service-Token") String internalJwt, @RequestBody AddBalanceRequest request) {
