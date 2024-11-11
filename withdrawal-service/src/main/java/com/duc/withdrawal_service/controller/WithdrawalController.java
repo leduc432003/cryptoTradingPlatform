@@ -5,6 +5,7 @@ import com.duc.withdrawal_service.dto.UserRole;
 import com.duc.withdrawal_service.dto.WalletDTO;
 import com.duc.withdrawal_service.dto.request.AddBalanceRequest;
 import com.duc.withdrawal_service.model.Withdrawal;
+import com.duc.withdrawal_service.model.WithdrawalStatus;
 import com.duc.withdrawal_service.service.UserService;
 import com.duc.withdrawal_service.service.WalletService;
 import com.duc.withdrawal_service.service.WithdrawalService;
@@ -63,12 +64,12 @@ public class WithdrawalController {
     }
 
     @GetMapping("/admin")
-    public ResponseEntity<List<Withdrawal>> getAllWithdrawalHistory(@RequestHeader("Authorization") String jwt) throws Exception {
+    public ResponseEntity<List<Withdrawal>> getAllWithdrawalHistory(@RequestHeader("Authorization") String jwt, @RequestParam(required = false) WithdrawalStatus withdrawalStatus) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         if(!user.getRole().equals(UserRole.ROLE_ADMIN)) {
             throw new Exception("Only admin can watch withdrawal");
         }
-        List<Withdrawal> withdrawalList = withdrawalService.getAllWithdrawalRequest();
+        List<Withdrawal> withdrawalList = withdrawalService.getAllWithdrawalRequest(withdrawalStatus);
 
         return new ResponseEntity<>(withdrawalList, HttpStatus.OK);
     }

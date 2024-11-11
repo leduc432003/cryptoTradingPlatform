@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -47,7 +48,12 @@ public class WithdrawalServiceImpl implements WithdrawalService {
     }
 
     @Override
-    public List<Withdrawal> getAllWithdrawalRequest() {
-        return withdrawalRepository.findAll();
+    public List<Withdrawal> getAllWithdrawalRequest(WithdrawalStatus withdrawalStatus) {
+        List<Withdrawal> withdrawalList = withdrawalRepository.findAll();
+        List<Withdrawal> filteredWithdrawal = withdrawalList.stream()
+                .filter(withdrawal -> withdrawalStatus == null ||
+                        withdrawal.getStatus().name().equalsIgnoreCase(withdrawalStatus.toString()))
+                .toList();
+        return filteredWithdrawal;
     }
 }
