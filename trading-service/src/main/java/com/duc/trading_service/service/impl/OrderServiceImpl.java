@@ -48,7 +48,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<Orders> getAllOrdersOfUser(Long userId, OrderType orderType, String assetSymbol) {
-        return orderRepository.findByUserId(userId);
+        List<Orders> ordersList =  orderRepository.findByUserId(userId);
+        return ordersList.stream().filter(orders -> (orderType == null || orders.getOrderType().name().equalsIgnoreCase(orderType.toString())) || (assetSymbol == null || orders.getOrderItem().getCoinId().equalsIgnoreCase(assetSymbol))).toList();
     }
 
     @Override
