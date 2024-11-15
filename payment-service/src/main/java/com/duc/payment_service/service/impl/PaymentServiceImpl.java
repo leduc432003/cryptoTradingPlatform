@@ -32,7 +32,7 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setUserId(userId);
         payment.setAccountNumber("0972024254");
         payment.setBank("MBBank");
-        String content = "PAYMENT_" + userId + "_" + UUID.randomUUID();
+        String content = "THANHTOAN " + userId + " " + UUID.randomUUID();
         payment.setContent(content);
         payment.setAmount(amount);
         payment.setStatus(PaymentStatus.PENDING);
@@ -51,7 +51,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment payment = paymentOptional.get();
         BigDecimal amount = payment.getAmount();
-        String qrContent = payment.getContent();
+        String qrContent = payment.getContent().toUpperCase().replace("-", "");
 
         String apiUrl = "https://my.sepay.vn/userapi/transactions/list?account_number=0972024254&limit=20";
         try {
