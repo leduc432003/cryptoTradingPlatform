@@ -21,6 +21,7 @@ public class Orders {
     private OrderType orderType;
     @Column(nullable = false)
     private BigDecimal price;
+    private BigDecimal limitPrice;
     private LocalDateTime timestamp = LocalDateTime.now();
     @Column(nullable = false)
     private OrderStatus status;

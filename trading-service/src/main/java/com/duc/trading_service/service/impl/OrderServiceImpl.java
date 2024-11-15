@@ -10,6 +10,7 @@ import com.duc.trading_service.repository.OrderRepository;
 import com.duc.trading_service.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +36,16 @@ public class OrderServiceImpl implements OrderService {
         order.setUserId(userId);
         order.setOrderItem(orderItem);
         order.setOrderType(orderType);
-        order.setPrice(BigDecimal.valueOf(price));
+
+        // Nếu là LIMIT_BUY hoặc LIMIT_SELL, thì sử dụng limitPrice thay vì price hiện tại
+        if (orderType == OrderType.LIMIT_BUY || orderType == OrderType.LIMIT_SELL) {
+            order.setPrice(BigDecimal.valueOf(price)); // Có thể giữ giá trị hiện tại hoặc tính lại giá cho LIMIT (nếu cần)
+            order.setLimitPrice(BigDecimal.valueOf(price)); // Đặt limitPrice cho đơn hàng LIMIT_*
+        } else {
+            order.setPrice(BigDecimal.valueOf(price)); // Đặt giá hiện tại cho các đơn hàng không phải LIMIT
+        }
+
+        // Thiết lập các thuộc tính khác
         order.setTimestamp(LocalDateTime.now());
         order.setStatus(OrderStatus.PENDING);
         return orderRepository.save(order);
@@ -53,18 +63,54 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Orders processOrder(String coinId, double quantity, OrderType orderType, Long userId, String jwt) throws Exception {
-        if(orderType == OrderType.BUY) {
-            return buyAsset(coinId, quantity, userId, jwt);
-        } else if (orderType == OrderType.SELL) {
-            return sellAsset(coinId, quantity, userId, jwt);
-        }
-        throw new Exception("order type is invalid");
+    public Orders processOrder(String coinId, double quantity, BigDecimal limitPrice, OrderType orderType, Long userId, String jwt) throws Exception {
+        return switch (orderType) {
+            case BUY -> buyAsset(coinId, quantity, userId, jwt);
+            case SELL -> sellAsset(coinId, quantity, userId, jwt);
+            case LIMIT_BUY -> placeLimitOrder(coinId, quantity, userId, limitPrice, OrderType.LIMIT_BUY);
+            case LIMIT_SELL -> placeLimitOrder(coinId, quantity, userId, limitPrice, OrderType.LIMIT_SELL);
+            default -> throw new Exception("Invalid order type");
+        };
     }
 
-    @Override
+    private Orders placeLimitOrder(String coinId, double quantity, Long userId, BigDecimal limitPrice, OrderType orderType) throws Exception {
+        if (quantity <= 0 || limitPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new Exception("Quantity and limit price must be greater than 0");
+        }
+
+        OrderItem orderItem = orderItemService.createOrderItem(coinId, quantity, 0, 0);
+        Orders limitOrder = createOrder(userId, orderItem, OrderType.LIMIT_BUY);
+        return limitOrder;
+    }
+
+    public void matchLimitOrders() {
+        List<Orders> pendingLimitOrders = orderRepository.findByStatus(OrderStatus.PENDING);
+
+        for (Orders order : pendingLimitOrders) {
+            BigDecimal currentPrice = BigDecimal.valueOf(coinService.getCoinById(order.getOrderItem().getCoinId()).getCurrentPrice());
+
+            if ((order.getOrderType() == OrderType.LIMIT_BUY && currentPrice.compareTo(order.getLimitPrice()) <= 0) ||
+                    (order.getOrderType() == OrderType.LIMIT_SELL && currentPrice.compareTo(order.getLimitPrice()) >= 0)) {
+
+                try {
+                    if (order.getOrderType() == OrderType.LIMIT_BUY) {
+                        buyAsset(order.getOrderItem().getCoinId(), order.getOrderItem().getQuantity(), order.getUserId(), "internal");
+                    } else if (order.getOrderType() == OrderType.LIMIT_SELL) {
+                        sellAsset(order.getOrderItem().getCoinId(), order.getOrderItem().getQuantity(), order.getUserId(), "internal");
+                    }
+
+                    order.setStatus(OrderStatus.SUCCESS);
+                    orderRepository.save(order);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+
     @Transactional
-    public Orders buyAsset(String coinId, double quantity, Long userId, String jwt) throws Exception {
+    private Orders buyAsset(String coinId, double quantity, Long userId, String jwt) throws Exception {
         if(quantity <= 0) {
             throw new Exception("quantity must be > 0");
         }
@@ -90,10 +136,9 @@ public class OrderServiceImpl implements OrderService {
 
         return orderRepository.save(order);
     }
-
-    @Override
+    
     @Transactional
-    public Orders sellAsset(String coinId, double quantity, Long userId, String jwt) throws Exception {
+    private Orders sellAsset(String coinId, double quantity, Long userId, String jwt) throws Exception {
         if(quantity <= 0) {
             throw new Exception("quantity must be > 0");
         }

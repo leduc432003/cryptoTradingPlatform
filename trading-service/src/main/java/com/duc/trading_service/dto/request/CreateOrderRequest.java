@@ -12,4 +12,5 @@ public class CreateOrderRequest {
     private String coinId;
     private double quantity;
     private OrderType orderType;
+    private double limitPrice = 0.0;
 }

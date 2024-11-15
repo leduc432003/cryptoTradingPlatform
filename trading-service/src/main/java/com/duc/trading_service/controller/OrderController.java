@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -21,10 +22,18 @@ public class OrderController {
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<Orders> payOrderPayment(@RequestHeader("Authorization") String jwt, @RequestBody CreateOrderRequest request) throws Exception {
-        UserDTO user = userService.getUserProfile(jwt);
-        Orders order = orderService.processOrder(request.getCoinId(), request.getQuantity(), request.getOrderType(), user.getId(), jwt);
-        return new ResponseEntity<>(order, HttpStatus.OK);
+    public ResponseEntity<?> payOrderPayment(@RequestHeader("Authorization") String jwt, @RequestBody CreateOrderRequest request) throws Exception {
+        try {
+            UserDTO user = userService.getUserProfile(jwt);
+
+            Orders order = orderService.processOrder(request.getCoinId(), request.getQuantity(),
+                    BigDecimal.valueOf(request.getLimitPrice()), request.getOrderType(),
+                    user.getId(), jwt);
+            return ResponseEntity.ok(order);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+
     }
 
     @GetMapping("/{orderId}")
