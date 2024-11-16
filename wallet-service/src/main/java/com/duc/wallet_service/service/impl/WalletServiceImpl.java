@@ -34,10 +34,11 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public Wallet addBalance(Wallet wallet, Long money) {
+    public Wallet addBalance(Wallet wallet, double money, WalletTransactionType transactionType) {
         BigDecimal balance = wallet.getBalance();
         BigDecimal newBalance = balance.add(BigDecimal.valueOf(money));
         wallet.setBalance(newBalance);
+        walletTransactionService.createWalletTransaction(wallet, transactionType, null, transactionType.toString(), BigDecimal.valueOf(money));
         return walletRepository.save(wallet);
     }
 

@@ -1,6 +1,8 @@
 package com.duc.trading_service.service.impl;
 
 import com.duc.trading_service.dto.AssetDTO;
+import com.duc.trading_service.dto.WalletTransactionType;
+import com.duc.trading_service.dto.request.AddBalanceRequest;
 import com.duc.trading_service.dto.request.CreateAssetRequest;
 import com.duc.trading_service.model.Orders;
 import com.duc.trading_service.model.OrderItem;
@@ -28,6 +30,8 @@ public class OrderServiceImpl implements OrderService {
     private final AssetService assetService;
     @Value("${internal.service.token}")
     private String internalServiceToken;
+    @Value("${internal1.service.token}")
+    private String internal1ServiceToken;
 
     @Override
     public Orders createOrder(Long userId, OrderItem orderItem, OrderType orderType) {
@@ -37,15 +41,12 @@ public class OrderServiceImpl implements OrderService {
         order.setOrderItem(orderItem);
         order.setOrderType(orderType);
 
-        // Nếu là LIMIT_BUY hoặc LIMIT_SELL, thì sử dụng limitPrice thay vì price hiện tại
         if (orderType == OrderType.LIMIT_BUY || orderType == OrderType.LIMIT_SELL) {
-            order.setPrice(BigDecimal.valueOf(price)); // Có thể giữ giá trị hiện tại hoặc tính lại giá cho LIMIT (nếu cần)
-            order.setLimitPrice(BigDecimal.valueOf(price)); // Đặt limitPrice cho đơn hàng LIMIT_*
+            order.setPrice(BigDecimal.valueOf(0));
         } else {
-            order.setPrice(BigDecimal.valueOf(price)); // Đặt giá hiện tại cho các đơn hàng không phải LIMIT
+            order.setPrice(BigDecimal.valueOf(price));
         }
 
-        // Thiết lập các thuộc tính khác
         order.setTimestamp(LocalDateTime.now());
         order.setStatus(OrderStatus.PENDING);
         return orderRepository.save(order);
@@ -67,34 +68,40 @@ public class OrderServiceImpl implements OrderService {
         return switch (orderType) {
             case BUY -> buyAsset(coinId, quantity, userId, jwt);
             case SELL -> sellAsset(coinId, quantity, userId, jwt);
-            case LIMIT_BUY -> placeLimitOrder(coinId, quantity, userId, limitPrice, OrderType.LIMIT_BUY);
-            case LIMIT_SELL -> placeLimitOrder(coinId, quantity, userId, limitPrice, OrderType.LIMIT_SELL);
+            case LIMIT_BUY -> placeLimitOrder(coinId, quantity, userId, limitPrice, OrderType.LIMIT_BUY,  jwt);
+            case LIMIT_SELL -> placeLimitOrder(coinId, quantity, userId, limitPrice, OrderType.LIMIT_SELL, jwt);
             default -> throw new Exception("Invalid order type");
         };
     }
 
-    private Orders placeLimitOrder(String coinId, double quantity, Long userId, BigDecimal limitPrice, OrderType orderType) throws Exception {
+    private Orders placeLimitOrder(String coinId, double quantity, Long userId, BigDecimal limitPrice, OrderType orderType, String jwt) throws Exception {
         if (quantity <= 0 || limitPrice.compareTo(BigDecimal.ZERO) <= 0) {
             throw new Exception("Quantity and limit price must be greater than 0");
         }
 
         OrderItem orderItem = orderItemService.createOrderItem(coinId, quantity, 0, 0);
-        Orders limitOrder = createOrder(userId, orderItem, OrderType.LIMIT_BUY);
-        return limitOrder;
+        Orders order = createOrder(userId, orderItem, orderType);
+        order.setLimitPrice(limitPrice);
+        order.setStatus(OrderStatus.PENDING);
+        orderItem.setOrder(order);
+        return orderRepository.save(order);
     }
 
+    @Scheduled(fixedRate = 60000)
     public void matchLimitOrders() {
         List<Orders> pendingLimitOrders = orderRepository.findByStatus(OrderStatus.PENDING);
 
         for (Orders order : pendingLimitOrders) {
+            if(order.getOrderItem() == null) {
+                continue;
+            }
             BigDecimal currentPrice = BigDecimal.valueOf(coinService.getCoinById(order.getOrderItem().getCoinId()).getCurrentPrice());
-
             if ((order.getOrderType() == OrderType.LIMIT_BUY && currentPrice.compareTo(order.getLimitPrice()) <= 0) ||
                     (order.getOrderType() == OrderType.LIMIT_SELL && currentPrice.compareTo(order.getLimitPrice()) >= 0)) {
 
                 try {
                     if (order.getOrderType() == OrderType.LIMIT_BUY) {
-                        buyAsset(order.getOrderItem().getCoinId(), order.getOrderItem().getQuantity(), order.getUserId(), "internal");
+                        buyAssetForLimitOrder(order, internal1ServiceToken);
                     } else if (order.getOrderType() == OrderType.LIMIT_SELL) {
                         sellAsset(order.getOrderItem().getCoinId(), order.getOrderItem().getQuantity(), order.getUserId(), "internal");
                     }
@@ -106,6 +113,42 @@ public class OrderServiceImpl implements OrderService {
                 }
             }
         }
+    }
+
+    @Transactional
+    private void buyAssetForLimitOrder(Orders limitOrder, String jwt) throws Exception {
+        if (limitOrder == null || limitOrder.getOrderItem() == null) {
+            throw new Exception("Invalid limit order");
+        }
+
+        double quantity = limitOrder.getOrderItem().getQuantity();
+        if (quantity <= 0) {
+            throw new Exception("Quantity must be greater than 0");
+        }
+
+        double buyPrice = limitOrder.getLimitPrice().doubleValue();
+        String coinId = limitOrder.getOrderItem().getCoinId();
+
+        AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
+        addBalanceRequest.setMoney(-buyPrice);
+        addBalanceRequest.setUserId(limitOrder.getUserId());
+        addBalanceRequest.setTransactionType(WalletTransactionType.BUY_ASSET);
+        walletService.addBalance(jwt, addBalanceRequest);
+
+        limitOrder.setStatus(OrderStatus.SUCCESS);
+
+        AssetDTO oldAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, limitOrder.getOrderItem().getCoinId(), limitOrder.getUserId());
+        if (oldAsset == null) {
+            CreateAssetRequest request = new CreateAssetRequest();
+            request.setUserId(limitOrder.getUserId());
+            request.setCoinId(coinId);
+            request.setQuantity(quantity);
+            assetService.createAsset(internalServiceToken, request);
+        } else {
+            assetService.updateAsset(internalServiceToken, oldAsset.getId(), quantity);
+        }
+
+        orderRepository.save(limitOrder);
     }
 
 

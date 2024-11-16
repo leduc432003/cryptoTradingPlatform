@@ -1,5 +1,6 @@
 package com.duc.withdrawal_service.dto.request;
 
+import com.duc.withdrawal_service.dto.WalletTransactionType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,5 +10,6 @@ import lombok.NoArgsConstructor;
 @Data
 public class AddBalanceRequest {
     private Long userId;
-    private Long money;
+    private double money;
+    private WalletTransactionType transactionType;
 }

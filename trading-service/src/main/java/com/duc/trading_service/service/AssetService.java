@@ -12,6 +12,8 @@ public interface AssetService {
     AssetDTO createAsset(@RequestHeader("Internal-Service-Token") String jwt, @RequestBody CreateAssetRequest request);
     @GetMapping("/api/asset/coin/{coinId}/user")
     AssetDTO getAssetByUserIdAndCoinId(@RequestHeader("Authorization") String jwt, @PathVariable String coinId);
+    @GetMapping("/api/asset/coin/{coinId}/user/{userId}")
+    AssetDTO getAssetByUserIdAndCoinIdInternal(@RequestHeader("Internal-Service-Token") String jwt, @PathVariable String coinId, @PathVariable Long userId);
     @PutMapping("/api/asset/{assetId}")
     AssetDTO updateAsset(@RequestHeader("Internal-Service-Token") String jwt, @PathVariable Long assetId, @RequestParam("quantity") double quantity);
     @DeleteMapping("/api/asset/{assetId}")

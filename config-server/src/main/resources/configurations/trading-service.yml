@@ -13,6 +13,9 @@ server:
 internal:
   service:
     token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcmRlci1hc3NldCIsIm5hbWUiOiJkdWMiLCJpYXQiOjE1MTYyMzkwMjJ9.8g17YdNK8j7pAQX3sGF4s7ejIot77d9K6frZVZTo-Bk
+internal1:
+  service:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0aGVtIHJ1dCB0aWVuIiwibmFtZSI6ImR1YyIsImlhdCI6NDMyMDAzfQ.L1HlqgP2FBfE3DNXtJsFbkpg8TF82QUaUi7DCVb-4mM
 
 eureka:
   instance:

@@ -30,7 +30,7 @@ public class WalletController {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         Wallet wallet = walletService.getWalletByUserId(request.getUserId());
-        walletService.addBalance(wallet, request.getMoney());
+        walletService.addBalance(wallet, request.getMoney(), request.getTransactionType());
         return new ResponseEntity<>(wallet, HttpStatus.OK);
     }
 

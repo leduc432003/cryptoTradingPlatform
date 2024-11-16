@@ -1,6 +1,6 @@
-package com.duc.wallet_service.dto.request;
+package com.duc.trading_service.dto.request;
 
-import com.duc.wallet_service.model.WalletTransactionType;
+import com.duc.trading_service.dto.WalletTransactionType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

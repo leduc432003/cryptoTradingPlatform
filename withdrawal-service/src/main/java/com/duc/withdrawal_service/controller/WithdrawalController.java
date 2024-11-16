@@ -3,6 +3,7 @@ package com.duc.withdrawal_service.controller;
 import com.duc.withdrawal_service.dto.UserDTO;
 import com.duc.withdrawal_service.dto.UserRole;
 import com.duc.withdrawal_service.dto.WalletDTO;
+import com.duc.withdrawal_service.dto.WalletTransactionType;
 import com.duc.withdrawal_service.dto.request.AddBalanceRequest;
 import com.duc.withdrawal_service.model.Withdrawal;
 import com.duc.withdrawal_service.model.WithdrawalStatus;
@@ -35,6 +36,7 @@ public class WithdrawalController {
         AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
         addBalanceRequest.setUserId(user.getId());
         addBalanceRequest.setMoney(-withdrawal.getAmount());
+        addBalanceRequest.setTransactionType(WalletTransactionType.WITHDRAWAL);
         walletService.addBalance(internalServiceToken, addBalanceRequest);
         return new ResponseEntity<>(withdrawal, HttpStatus.OK);
     }
@@ -50,6 +52,7 @@ public class WithdrawalController {
             AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
             addBalanceRequest.setUserId(withdrawal.getUserId());
             addBalanceRequest.setMoney(withdrawal.getAmount());
+            addBalanceRequest.setTransactionType(WalletTransactionType.WITHDRAWAL);
             walletService.addBalance(internalServiceToken, addBalanceRequest);
         }
         return new ResponseEntity<>(withdrawal, HttpStatus.OK);

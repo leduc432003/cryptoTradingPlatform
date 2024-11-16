@@ -63,6 +63,12 @@ public class AssetController {
         return new ResponseEntity<>(asset, HttpStatus.OK);
     }
 
+    @GetMapping("/coin/{coinId}/user/{userId}")
+    public ResponseEntity<Asset> getAssetByUserIdAndCoinIdInternal(@RequestHeader("Internal-Service-Token") String jwt, @PathVariable String coinId, @PathVariable Long userId) throws Exception {
+        Asset asset = assetService.findAssetByUserIdAndCoinId(userId, coinId);
+        return new ResponseEntity<>(asset, HttpStatus.OK);
+    }
+
     @GetMapping
     public ResponseEntity<List<Asset>> getAssetsForUser(@RequestHeader("Authorization") String jwt) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
