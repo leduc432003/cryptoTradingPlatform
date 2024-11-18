@@ -52,4 +52,15 @@ public class OrderController {
         List<Orders> orderList = orderService.getAllOrdersOfUser(user.getId(), order_type, asset_symbol);
         return new ResponseEntity<>(orderList, HttpStatus.OK);
     }
+
+    @PutMapping("/cancel/{orderId}")
+    public ResponseEntity<String> cancelLimitOrder(@RequestHeader("Authorization") String jwt, @PathVariable Long orderId) {
+        UserDTO user = userService.getUserProfile(jwt);
+        try {
+            orderService.cancelLimitOrder(orderId, user.getId());
+            return ResponseEntity.ok("Order canceled successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
 }

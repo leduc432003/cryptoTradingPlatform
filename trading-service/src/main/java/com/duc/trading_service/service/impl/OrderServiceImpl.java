@@ -1,6 +1,7 @@
 package com.duc.trading_service.service.impl;
 
 import com.duc.trading_service.dto.AssetDTO;
+import com.duc.trading_service.dto.WalletDTO;
 import com.duc.trading_service.dto.WalletTransactionType;
 import com.duc.trading_service.dto.request.AddBalanceRequest;
 import com.duc.trading_service.dto.request.CreateAssetRequest;
@@ -60,7 +61,10 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<Orders> getAllOrdersOfUser(Long userId, OrderType orderType, String assetSymbol) {
         List<Orders> ordersList =  orderRepository.findByUserId(userId);
-        return ordersList.stream().filter(orders -> (orderType == null || orders.getOrderType().name().equalsIgnoreCase(orderType.toString())) || (assetSymbol == null || orders.getOrderItem().getCoinId().equalsIgnoreCase(assetSymbol))).toList();
+        return ordersList.stream()
+                .filter(orders -> orderType == null || orders.getOrderType().name().equalsIgnoreCase(orderType.toString()))
+                .filter(order -> assetSymbol == null || order.getOrderItem().getCoinId().equalsIgnoreCase(assetSymbol))
+                .toList();
     }
 
     @Override
@@ -74,9 +78,22 @@ public class OrderServiceImpl implements OrderService {
         };
     }
 
+    @Transactional
     private Orders placeLimitOrder(String coinId, double quantity, Long userId, BigDecimal limitPrice, OrderType orderType, String jwt) throws Exception {
         if (quantity <= 0 || limitPrice.compareTo(BigDecimal.ZERO) <= 0) {
             throw new Exception("Quantity and limit price must be greater than 0");
+        }
+
+        if(orderType == OrderType.LIMIT_SELL) {
+            AssetDTO currentAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coinId, userId);
+            if (currentAsset == null || currentAsset.getQuantity() < quantity) {
+                throw new Exception("Insufficient assets to sell");
+            }
+        } else if (orderType == OrderType.LIMIT_BUY) {
+            WalletDTO walletDTO = walletService.getUserWallet(jwt);
+            if(walletDTO.getBalance().compareTo(BigDecimal.valueOf(limitPrice.doubleValue() * quantity)) < 0) {
+                throw new Exception("Insufficient balance to buy");
+            }
         }
 
         OrderItem orderItem = orderItemService.createOrderItem(coinId, quantity, 0, 0);
@@ -103,7 +120,7 @@ public class OrderServiceImpl implements OrderService {
                     if (order.getOrderType() == OrderType.LIMIT_BUY) {
                         buyAssetForLimitOrder(order, internal1ServiceToken);
                     } else if (order.getOrderType() == OrderType.LIMIT_SELL) {
-                        sellAsset(order.getOrderItem().getCoinId(), order.getOrderItem().getQuantity(), order.getUserId(), "internal");
+                        sellAssetForLimitOrder(order, internal1ServiceToken);
                     }
 
                     order.setStatus(OrderStatus.SUCCESS);
@@ -151,6 +168,26 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.save(limitOrder);
     }
 
+    @Transactional
+    private void sellAssetForLimitOrder(Orders limitOrder, String jwt) throws Exception {
+        if (limitOrder == null || limitOrder.getOrderItem() == null) {
+            throw new Exception("Invalid limit order");
+        }
+
+        BigDecimal sellPrice = limitOrder.getLimitPrice();
+        AssetDTO oldAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, limitOrder.getOrderItem().getCoinId(), limitOrder.getUserId());
+        AssetDTO updatedAsset = assetService.updateAsset(internalServiceToken, oldAsset.getId(), -limitOrder.getOrderItem().getQuantity());
+        if (updatedAsset.getQuantity() <= 0) {
+            assetService.deleteAsset(internalServiceToken, updatedAsset.getId());
+        }
+
+        AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
+        addBalanceRequest.setUserId(limitOrder.getUserId());
+        addBalanceRequest.setMoney(sellPrice.doubleValue());
+        addBalanceRequest.setTransactionType(WalletTransactionType.SELL_ASSET);
+        walletService.addBalance(jwt, addBalanceRequest);
+        orderRepository.save(limitOrder);
+    }
 
     @Transactional
     private Orders buyAsset(String coinId, double quantity, Long userId, String jwt) throws Exception {
@@ -207,5 +244,20 @@ public class OrderServiceImpl implements OrderService {
             throw new Exception("Insufficient quantity to sell");
         }
         throw new Exception("Asset not found");
+    }
+
+    @Transactional
+    @Override
+    public void cancelLimitOrder(Long orderId, Long userId) throws Exception {
+        Orders order = getOrderById(orderId);
+        if (!order.getUserId().equals(userId)) {
+            throw new Exception("You are not authorized to cancel this order");
+        }
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new Exception("Order cannot be canceled as it is not in PENDING status");
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        orderRepository.save(order);
     }
 }

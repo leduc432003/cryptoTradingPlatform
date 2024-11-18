@@ -12,4 +12,6 @@ public interface WalletService {
     WalletDTO payOrderPayment(@RequestHeader("Authorization") String jwt, @PathVariable Long orderId);
     @PostMapping("/api/wallet")
     WalletDTO addBalance(@RequestHeader("Internal-Service-Token") String internalJwt, @RequestBody AddBalanceRequest request);
+    @GetMapping("/api/wallet")
+    WalletDTO getUserWallet(@RequestHeader("Authorization") String jwt);
 }
