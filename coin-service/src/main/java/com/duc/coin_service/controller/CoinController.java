@@ -96,4 +96,24 @@ public class CoinController {
         JsonNode jsonNode = objectMapper.readTree(coin);
         return new ResponseEntity<>(jsonNode, HttpStatus.OK);
     }
+
+    @GetMapping("/news")
+    ResponseEntity<JsonNode> getNews(@RequestParam(required = false) String categories, @RequestParam(required = false) Long timestamp) throws Exception {
+        if(categories == null) {
+            categories = "";
+        }
+        if (timestamp == null) {
+            timestamp = System.currentTimeMillis();
+        }
+        String coin = coinService.getNews(categories, timestamp);
+        JsonNode jsonNode = objectMapper.readTree(coin);
+        return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    }
+
+    @GetMapping("/news-article-categories")
+    ResponseEntity<JsonNode> getNewsArticleCategories() throws Exception {
+        String coin = coinService.getNewsArticleCategories();
+        JsonNode jsonNode = objectMapper.readTree(coin);
+        return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    }
 }

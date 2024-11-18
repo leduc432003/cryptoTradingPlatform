@@ -307,4 +307,40 @@ public class CoinServiceImpl implements CoinService {
             throw new Exception(e.getMessage());
         }
     }
+
+    @Override
+    public String getNews(String categories, Long timestamp) throws Exception {
+        String url = "https://min-api.cryptocompare.com/data/v2/news/?lang=EN&lTs=" + timestamp +"&categories=" + categories;
+
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("authorization", "Apikey 38fd1c6f33d6c2a3e3a58c6f3da6295909b420a3e2c3ac23cd5a534309b988a4")
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            return response.body();
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    @Override
+    public String getNewsArticleCategories() throws Exception {
+        String url = "https://min-api.cryptocompare.com/data/news/categories";
+
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("authorization", "Apikey 38fd1c6f33d6c2a3e3a58c6f3da6295909b420a3e2c3ac23cd5a534309b988a4")
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            return response.body();
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw new Exception(e.getMessage());
+        }
+    }
 }

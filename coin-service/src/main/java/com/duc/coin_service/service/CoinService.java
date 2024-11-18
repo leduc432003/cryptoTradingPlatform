@@ -16,4 +16,6 @@ public interface CoinService {
     String getTrendingCoins() throws Exception;
     String getGlobal() throws Exception;
     String getCategoriesList(String order) throws Exception;
+    String getNews(String categories, Long timestamp) throws Exception;
+    String getNewsArticleCategories() throws Exception;
 }
