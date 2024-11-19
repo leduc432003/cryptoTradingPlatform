@@ -1,0 +1,31 @@
+server:
+  port: 8040
+spring:
+  data:
+    mongodb:
+      username: duc
+      password: duc
+      host: localhost
+      port: 27017
+      database: notification
+      authentication-database: admin
+  kafka:
+    bootstrap-servers: localhost:9094
+    consumer:
+      group-id: notification
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: leanhduc04032003@gmail.com
+    password: nslwgrnplydsmgty
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true

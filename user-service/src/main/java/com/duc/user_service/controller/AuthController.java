@@ -5,14 +5,16 @@ import com.duc.user_service.dto.request.LoginRequest;
 import com.duc.user_service.dto.request.ResetPasswordRequest;
 import com.duc.user_service.dto.response.ApiResponse;
 import com.duc.user_service.dto.response.AuthResponse;
+import com.duc.user_service.kafka.NotificationEvent;
 import com.duc.user_service.model.*;
 import com.duc.user_service.repository.UserRepository;
 import com.duc.user_service.service.*;
 import com.duc.user_service.utils.OtpUtils;
 import lombok.RequiredArgsConstructor;
-import org.aspectj.weaver.patterns.IToken;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -34,6 +36,8 @@ public class AuthController {
     private final EmailService emailService;
     private final UserService userService;
     private final ForgotPasswordService forgotPasswordService;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final NewTopic topic;
 
     @PostMapping("/signup")
     public ResponseEntity<AuthResponse> register(@RequestBody User user) throws Exception {
@@ -84,8 +88,13 @@ public class AuthController {
 
             TwoFactorOTP newTwoFactorOtp = twoFactorOTPService.createTwoFactorOTP(user, otp, jwt);
 
-            emailService.sendVerificationOtpEmail(userName, otp);
-
+//            emailService.sendVerificationOtpEmail(userName, otp);
+            NotificationEvent notificationEvent = NotificationEvent.builder()
+                    .channel("EMAIL")
+                    .recipient(user.getEmail())
+                    .otp(otp)
+                    .build();
+            kafkaTemplate.send(topic.name(), notificationEvent);
             AuthResponse res = AuthResponse.builder()
                     .message("Two factor authentication is enable")
                     .isTwoFactorAuthEnabled(true)

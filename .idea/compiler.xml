@@ -18,6 +18,7 @@
         <module name="wallet-service" />
         <module name="trading-service" />
         <module name="gateway" />
+        <module name="notification-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -31,6 +32,7 @@
       <module name="config-server" options="-parameters" />
       <module name="discovery" options="-parameters" />
       <module name="gateway" options="-parameters" />
+      <module name="notification-service" options="-parameters" />
       <module name="payment-service" options="-parameters" />
       <module name="trading-service" options="-parameters" />
       <module name="user-service" options="-parameters" />
