@@ -7,7 +7,7 @@ spring:
       password: duc
       host: localhost
       port: 27017
-      database: notification
+      database: notification-service
       authentication-database: admin
   kafka:
     bootstrap-servers: localhost:9094

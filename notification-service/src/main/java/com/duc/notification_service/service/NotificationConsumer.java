@@ -21,7 +21,7 @@ public class NotificationConsumer {
     private final NotificationRepository repository;
     private final EmailService emailService;
 
-    @KafkaListener(topics = "login-topic")
+    @KafkaListener(topics = "send-otp")
     public void consumeLoginNotifications(String notificationEvent) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         NotificationEvent notificationEvent1 = null;
@@ -31,7 +31,7 @@ public class NotificationConsumer {
             throw new Exception(e);
         }
         emailService.sendVerificationOtpEmail(notificationEvent1.getRecipient(), notificationEvent1.getOtp());
-//        repository.save(notificationEvent1);
+        repository.save(notificationEvent1);
     }
 
     public List<NotificationEvent> getNotificationEvent() {

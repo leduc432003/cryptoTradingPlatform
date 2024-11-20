@@ -10,7 +10,7 @@ public class KafkaConfig {
 
     @Bean
     public NewTopic loginTopic() {
-        return TopicBuilder.name("login-topic")
+        return TopicBuilder.name("send-otp")
                 .build();
     }
 }

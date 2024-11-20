@@ -33,7 +33,6 @@ public class AuthController {
     private final UserRepository userRepository;
     private final CustomerUserDetailService customerUserDetailService;
     private final TwoFactorOTPService twoFactorOTPService;
-    private final EmailService emailService;
     private final UserService userService;
     private final ForgotPasswordService forgotPasswordService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
@@ -88,7 +87,6 @@ public class AuthController {
 
             TwoFactorOTP newTwoFactorOtp = twoFactorOTPService.createTwoFactorOTP(user, otp, jwt);
 
-//            emailService.sendVerificationOtpEmail(userName, otp);
             NotificationEvent notificationEvent = NotificationEvent.builder()
                     .channel("EMAIL")
                     .recipient(user.getEmail())
@@ -149,7 +147,12 @@ public class AuthController {
             forgotPasswordOTP = forgotPasswordService.createOTP(user, id, otp, request.getVerificationType(), request.getEmail());
         }
         if(request.getVerificationType().equals(VerificationType.EMAIL)) {
-            emailService.sendVerificationOtpEmail(user.getEmail(), forgotPasswordOTP.getOtp());
+            NotificationEvent notificationEvent = NotificationEvent.builder()
+                    .channel("EMAIL")
+                    .recipient(user.getEmail())
+                    .otp(otp)
+                    .build();
+            kafkaTemplate.send(topic.name(), notificationEvent);
         }
         AuthResponse response = AuthResponse.builder()
                 .session(forgotPasswordOTP.getId())
