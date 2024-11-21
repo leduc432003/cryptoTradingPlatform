@@ -40,6 +40,16 @@ spring:
             lb://withdrawal-service
           predicates:
             - Path=/api/withdrawal/**
+        - id: payment-service
+          uri:
+            lb://payment-service
+          predicates:
+            - Path=/api/payments/**, /api/payment-details/**
+        - id: chatbox
+          uri:
+            lb://chatbox
+          predicates:
+            - Path=/ai/chat/**, /**
 
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin

@@ -8,17 +8,18 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="withdrawal-service" />
+        <module name="coin-service" />
+        <module name="user-service" />
+        <module name="watchlist-service" />
+        <module name="notification-service" />
         <module name="config-server" />
         <module name="payment-service" />
-        <module name="coin-service" />
         <module name="discovery" />
-        <module name="user-service" />
         <module name="asset-service" />
-        <module name="watchlist-service" />
+        <module name="chatbox" />
         <module name="wallet-service" />
         <module name="trading-service" />
         <module name="gateway" />
-        <module name="notification-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -28,6 +29,7 @@
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="asset-service" options="-parameters" />
+      <module name="chatbox" options="-parameters" />
       <module name="coin-service" options="-parameters" />
       <module name="config-server" options="-parameters" />
       <module name="discovery" options="-parameters" />
