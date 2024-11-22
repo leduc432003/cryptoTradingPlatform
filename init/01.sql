@@ -6,6 +6,7 @@ CREATE DATABASE IF NOT EXISTS kltn_wallet_service;
 CREATE DATABASE IF NOT EXISTS kltn_withdrawal_service;
 CREATE DATABASE IF NOT EXISTS kltn_watchlist_service;
 CREATE DATABASE IF NOT EXISTS kltn_payment_service;
+CREATE DATABASE IF NOT EXISTS chatbox;
 
 CREATE USER 'root'@'localhost' IDENTIFIED BY 'local';
 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
