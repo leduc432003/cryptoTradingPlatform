@@ -26,7 +26,7 @@ public class OrderController {
         try {
             UserDTO user = userService.getUserProfile(jwt);
 
-            Orders order = orderService.processOrder(request.getCoinId(), request.getQuantity(),
+            Orders order = orderService.processOrder(request.getCoinId(), request.getQuantity(), BigDecimal.valueOf(request.getStopPrice()),
                     BigDecimal.valueOf(request.getLimitPrice()), request.getOrderType(),
                     user.getId(), jwt);
             return ResponseEntity.ok(order);

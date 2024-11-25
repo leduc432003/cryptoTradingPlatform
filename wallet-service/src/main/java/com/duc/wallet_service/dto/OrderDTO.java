@@ -16,6 +16,7 @@ public class OrderDTO {
     private OrderType orderType;
     private BigDecimal price;
     private BigDecimal limitPrice;
+    private BigDecimal stopPrice;
     private LocalDateTime timestamp = LocalDateTime.now();
     private OrderStatus status;
     private OrderItem orderItem;

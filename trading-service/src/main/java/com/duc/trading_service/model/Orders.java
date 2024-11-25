@@ -19,9 +19,12 @@ public class Orders {
     private Long userId;
     @Column(nullable = false)
     private OrderType orderType;
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 19, scale = 6)
     private BigDecimal price;
+    @Column(precision = 19, scale = 6)
     private BigDecimal limitPrice;
+    @Column(precision = 19, scale = 6)
+    private BigDecimal stopPrice;
     private LocalDateTime timestamp = LocalDateTime.now();
     @Column(nullable = false)
     private OrderStatus status;

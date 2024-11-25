@@ -13,4 +13,5 @@ public class CreateOrderRequest {
     private double quantity;
     private OrderType orderType;
     private double limitPrice = 0.0;
+    private double stopPrice = 0.0;
 }
