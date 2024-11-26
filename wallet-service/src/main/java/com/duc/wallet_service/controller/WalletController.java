@@ -1,6 +1,7 @@
 package com.duc.wallet_service.controller;
 
 import com.duc.wallet_service.dto.UserDTO;
+import com.duc.wallet_service.dto.UserRole;
 import com.duc.wallet_service.dto.request.AddBalanceRequest;
 import com.duc.wallet_service.model.Wallet;
 import com.duc.wallet_service.model.WalletTransaction;
@@ -53,6 +54,16 @@ public class WalletController {
     public ResponseEntity<Wallet> payOrderPayment(@RequestHeader("Authorization") String jwt, @PathVariable Long orderId) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         Wallet wallet = walletService.payOrderPayment(orderId, user.getId(), jwt);
+        return new ResponseEntity<>(wallet, HttpStatus.OK);
+    }
+
+    @GetMapping("/admin/{userId}")
+    public ResponseEntity<Wallet> getUserWalletAdmin(@RequestHeader("Authorization") String jwt, @PathVariable Long userId) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        if(user.getRole() != UserRole.ROLE_ADMIN) {
+            throw new Exception("Only admin can see wallet user");
+        }
+        Wallet wallet = walletService.getWalletByUserId(userId);
         return new ResponseEntity<>(wallet, HttpStatus.OK);
     }
 }

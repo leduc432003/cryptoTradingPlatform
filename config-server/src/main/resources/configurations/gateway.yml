@@ -29,7 +29,7 @@ spring:
           uri:
             lb://wallet-service
           predicates:
-            - Path=/api/wallet/**
+            - Path=/api/wallet/**, /api/history/**
         - id: watchlist-service
           uri:
             lb://watchlist-service

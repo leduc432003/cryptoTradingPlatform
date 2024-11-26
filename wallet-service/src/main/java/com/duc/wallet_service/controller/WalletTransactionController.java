@@ -1,6 +1,7 @@
 package com.duc.wallet_service.controller;
 
 import com.duc.wallet_service.dto.UserDTO;
+import com.duc.wallet_service.dto.UserRole;
 import com.duc.wallet_service.model.Wallet;
 import com.duc.wallet_service.model.WalletTransaction;
 import com.duc.wallet_service.service.UserService;
@@ -9,10 +10,7 @@ import com.duc.wallet_service.service.WalletTransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -25,10 +23,29 @@ public class WalletTransactionController {
     private final WalletTransactionService walletTransactionService;
 
     @GetMapping
-    public ResponseEntity<List<WalletTransaction>> getUserWallet(@RequestHeader("Authorization") String jwt) {
+    public ResponseEntity<List<WalletTransaction>> getUserWalletTransaction(@RequestHeader("Authorization") String jwt) {
         UserDTO user = userService.getUserProfile(jwt);
         Wallet wallet = walletService.getWalletByUserId(user.getId());
         List<WalletTransaction> walletTransactions = walletTransactionService.getWalletTransactionService(wallet.getId());
         return new ResponseEntity<>(walletTransactions, HttpStatus.OK);
+    }
+
+    @GetMapping("/admin/{userId}")
+    public ResponseEntity<List<WalletTransaction>> getUserWalletTransactionAdmin(@RequestHeader("Authorization") String jwt, @PathVariable Long userId) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        if(user.getRole() != UserRole.ROLE_ADMIN) {
+            throw new Exception("Only admin can see wallet user");
+        }
+        Wallet wallet = walletService.getWalletByUserId(userId);
+        return new ResponseEntity<>(walletTransactionService.getWalletTransactionService(wallet.getId()), HttpStatus.OK);
+    }
+
+    @GetMapping("/admin/transaction")
+    public ResponseEntity<List<WalletTransaction>> getAllTransaction(@RequestHeader("Authorization") String jwt) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        if(user.getRole() != UserRole.ROLE_ADMIN) {
+            throw new Exception("Only admin can see wallet user");
+        }
+        return new ResponseEntity<>(walletTransactionService.getAllWalletTransaction(), HttpStatus.OK);
     }
 }

@@ -40,4 +40,9 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
     public List<WalletTransaction> getWalletTransactionService(Long walletId) {
         return walletTransactionRepository.findAllByWalletId(walletId);
     }
+
+    @Override
+    public List<WalletTransaction> getAllWalletTransaction() {
+        return walletTransactionRepository.findAll();
+    }
 }

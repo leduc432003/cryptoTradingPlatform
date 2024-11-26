@@ -4,6 +4,7 @@ import com.duc.user_service.dto.request.ChangePasswordRequest;
 import com.duc.user_service.dto.request.UserUpdateRequest;
 import com.duc.user_service.kafka.NotificationEvent;
 import com.duc.user_service.model.User;
+import com.duc.user_service.model.UserRole;
 import com.duc.user_service.model.VerificationCode;
 import com.duc.user_service.model.VerificationType;
 import com.duc.user_service.service.UserService;
@@ -14,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -95,5 +98,25 @@ public class UserController {
         User userUpdate = userService.updateUser(user.getId(), request);
 
         return new ResponseEntity<>(userUpdate, HttpStatus.OK);
+    }
+
+    @GetMapping("/admin")
+    public ResponseEntity<List<User>> getAllUser(@RequestHeader("Authorization") String jwt) throws Exception {
+        User user = userService.findUserProfileByJwt(jwt);
+        if(user.getRole() != UserRole.ROLE_ADMIN) {
+            throw new Exception("Only admin can watch user list");
+        }
+
+        return new ResponseEntity<>(userService.getAllUser(), HttpStatus.OK);
+    }
+
+    @GetMapping("/admin/{userId}")
+    public ResponseEntity<User> getUserById(@RequestHeader("Authorization") String jwt, @PathVariable Long userId) throws Exception {
+        User user = userService.findUserProfileByJwt(jwt);
+        if(user.getRole() != UserRole.ROLE_ADMIN) {
+            throw new Exception("Only admin can watch user list");
+        }
+
+        return new ResponseEntity<>(userService.findUserById(userId), HttpStatus.OK);
     }
 }
