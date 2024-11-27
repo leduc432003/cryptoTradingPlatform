@@ -11,5 +11,7 @@ public interface WalletTransactionService {
     WalletTransaction createWalletTransaction(Wallet wallet, WalletTransactionType transactionType, String transferId, String purpose, BigDecimal amount);
     WalletTransaction findByWallet(Long walletId);
     List<WalletTransaction> getWalletTransactionService(Long walletId);
-    List<WalletTransaction> getAllWalletTransaction();
+    List<WalletTransaction> getTransactionsByFilters(Long days, WalletTransactionType transactionType);
+    double getTotalAmountByFilters(Long days, WalletTransactionType transactionType);
+    public List<List<Object>> getTotalAmountByDateWithTimestamp(Long days, WalletTransactionType transactionType);
 }
