@@ -75,4 +75,11 @@ public class AssetController {
         List<Asset> assets = assetService.getAssetsByUserId(user.getId());
         return new ResponseEntity<>(assets, HttpStatus.OK);
     }
+
+    @PostMapping("/exchange")
+    public ResponseEntity<Asset> exchangeAsset(@RequestHeader("Authorization") String jwt, @RequestParam String fromCoinId, @RequestParam String toCoinId, @RequestParam double amount) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        Asset updatedAsset = assetService.exchangeAsset(user.getId(), fromCoinId, toCoinId, amount);
+        return new ResponseEntity<>(updatedAsset, HttpStatus.OK);
+    }
 }
