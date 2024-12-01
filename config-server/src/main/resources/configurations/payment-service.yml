@@ -9,6 +9,9 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 server:
   port: 5009
+internal:
+  service:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0aGVtIHJ1dCB0aWVuIiwibmFtZSI6ImR1YyIsImlhdCI6NDMyMDAzfQ.L1HlqgP2FBfE3DNXtJsFbkpg8TF82QUaUi7DCVb-4mM
 
 eureka:
   instance:

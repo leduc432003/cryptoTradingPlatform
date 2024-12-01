@@ -1,12 +1,16 @@
 package com.duc.payment_service.service.impl;
 
+import com.duc.payment_service.dto.WalletTransactionType;
+import com.duc.payment_service.dto.request.AddBalanceRequest;
 import com.duc.payment_service.model.Payment;
 import com.duc.payment_service.model.PaymentStatus;
 import com.duc.payment_service.repository.PaymentRepository;
 import com.duc.payment_service.service.PaymentService;
+import com.duc.payment_service.service.WalletService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
@@ -25,6 +29,9 @@ import java.util.UUID;
 public class PaymentServiceImpl implements PaymentService {
     private final ObjectMapper objectMapper;
     private final PaymentRepository paymentRepository;
+    private final WalletService walletService;
+    @Value("${internal.service.token}")
+    private String internalServiceToken;
 
     @Override
     public Payment createPaymentRequest(Long userId, BigDecimal amount) {
@@ -71,6 +78,11 @@ public class PaymentServiceImpl implements PaymentService {
 
                 if (transactionContent.contains(qrContent) && amountIn.compareTo(amount) == 0) {
                     payment.setStatus(PaymentStatus.SUCCESS);
+                    AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
+                    addBalanceRequest.setUserId(payment.getUserId());
+                    addBalanceRequest.setMoney(amount.doubleValue());
+                    addBalanceRequest.setTransactionType(WalletTransactionType.ADD_MONEY);
+                    walletService.addBalance(internalServiceToken, addBalanceRequest);
                     paymentRepository.save(payment);
                     return true;
                 }
