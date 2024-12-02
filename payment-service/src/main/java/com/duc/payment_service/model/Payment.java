@@ -20,6 +20,7 @@ public class Payment {
     private String accountNumber;
     private String bank;
     private BigDecimal amount;
+    private BigDecimal amountInVnd;
     private String content;
     private PaymentStatus status;
     private String qrLink;

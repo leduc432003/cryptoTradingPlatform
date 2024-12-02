@@ -22,7 +22,7 @@ public class PaymentController {
 
     @PostMapping("/create")
     public ResponseEntity<Payment> createPaymentRequest(
-            @RequestHeader("Authorization") String jwt, @RequestParam BigDecimal amount) {
+            @RequestHeader("Authorization") String jwt, @RequestParam BigDecimal amount) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         Payment payment = paymentService.createPaymentRequest(user.getId(), amount);
         return new ResponseEntity<>(payment, HttpStatus.CREATED);
