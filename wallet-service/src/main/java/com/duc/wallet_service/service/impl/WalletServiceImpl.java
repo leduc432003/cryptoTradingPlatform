@@ -27,7 +27,7 @@ public class WalletServiceImpl implements WalletService {
         if(wallet == null) {
             wallet = new Wallet();
             wallet.setUserId(userId);
-            wallet.setBalance(BigDecimal.valueOf(100));
+            wallet.setBalance(BigDecimal.valueOf(0));
             walletRepository.save(wallet);
         }
         return wallet;

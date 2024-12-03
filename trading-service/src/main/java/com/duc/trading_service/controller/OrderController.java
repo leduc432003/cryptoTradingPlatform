@@ -54,8 +54,12 @@ public class OrderController {
     }
 
     @PutMapping("/cancel/{orderId}")
-    public ResponseEntity<String> cancelLimitOrder(@RequestHeader("Authorization") String jwt, @PathVariable Long orderId) {
+    public ResponseEntity<String> cancelLimitOrder(@RequestHeader("Authorization") String jwt, @PathVariable Long orderId) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
+        Orders orders = orderService.getOrderById(orderId);
+        if (!orders.getUserId().equals(user.getId())) {
+            throw new Exception("You are not authorized to access this order");
+        }
         try {
             orderService.cancelLimitOrder(orderId, user.getId());
             return ResponseEntity.ok("Order canceled successfully");

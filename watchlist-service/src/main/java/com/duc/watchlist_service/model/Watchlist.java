@@ -16,6 +16,7 @@ public class Watchlist {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
+    private String name;
     private Long userId;
     private Set<String> coinIds = new HashSet<>();
 }

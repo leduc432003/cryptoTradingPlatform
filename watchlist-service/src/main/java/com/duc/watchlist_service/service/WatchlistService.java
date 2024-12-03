@@ -5,10 +5,10 @@ import com.duc.watchlist_service.model.Watchlist;
 import java.util.List;
 
 public interface WatchlistService {
-    Watchlist createWatchlist(Long userId);
-    List<Watchlist> findUserWatchlist(Long userId) throws Exception;
+    Watchlist createWatchlist(Long userId, String name);
+    List<Watchlist> findAllUserWatchlists(Long userId);
     Watchlist findById(Long id) throws Exception;
-    String addItemToWatchList(String coinId, Long watchlistId) throws Exception;
-    void deleteWatchlist(Long id);
+    Watchlist addItemToWatchList(String coinId, Long watchlistId) throws Exception;
     void deleteItemToWatchlist(String coinId, Long watchlistId) throws Exception;
+    void deleteWatchlist(Long watchlistId);
 }

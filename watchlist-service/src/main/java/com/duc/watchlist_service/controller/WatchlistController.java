@@ -19,59 +19,61 @@ import java.util.List;
 public class WatchlistController {
     private final WatchlistService watchlistService;
     private final UserService userService;
-    private final CoinService coinService;
 
     @GetMapping
-    public ResponseEntity<List<Watchlist>> getUserWatchlist(@RequestHeader("Authorization") String jwt) throws Exception {
+    public ResponseEntity<List<Watchlist>> getUserWatchlists(@RequestHeader("Authorization") String jwt) {
         UserDTO user = userService.getUserProfile(jwt);
-        List<Watchlist> watchlist = watchlistService.findUserWatchlist(user.getId());
-        return new ResponseEntity<>(watchlist, HttpStatus.OK);
+        List<Watchlist> watchlists = watchlistService.findAllUserWatchlists(user.getId());
+        return new ResponseEntity<>(watchlists, HttpStatus.OK);
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Watchlist> createWatchlist(@RequestHeader("Authorization") String jwt) {
+    public ResponseEntity<?> createWatchlist(@RequestHeader("Authorization") String jwt, @RequestParam String name) {
         UserDTO user = userService.getUserProfile(jwt);
-        Watchlist createWatchlist = watchlistService.createWatchlist(user.getId());
-        return new ResponseEntity<>(createWatchlist, HttpStatus.CREATED);
+        try {
+            Watchlist watchlist = watchlistService.createWatchlist(user.getId(), name);
+            return ResponseEntity.status(HttpStatus.CREATED).body(watchlist);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
-    @DeleteMapping("/delete/{watchlistId}")
+    @PatchMapping("/addCoin/{coinId}/{watchlistId}")
+    public ResponseEntity<Watchlist> addItemToWatchList(
+            @RequestHeader("Authorization") String jwt,
+            @PathVariable String coinId,
+            @PathVariable Long watchlistId) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        Watchlist watchlist = watchlistService.findById(watchlistId);
+        if (!watchlist.getUserId().equals(user.getId())) {
+            throw new SecurityException("Unauthorized to access this watchlist");
+        }
+        Watchlist updatedWatchlist = watchlistService.addItemToWatchList(coinId, watchlistId);
+        return ResponseEntity.ok(updatedWatchlist);
+    }
+
+    @PatchMapping("/deleteCoin/{coinId}/{watchlistId}")
+    public ResponseEntity<String> deleteItemToWatchlist(
+            @RequestHeader("Authorization") String jwt,
+            @PathVariable String coinId,
+            @PathVariable Long watchlistId) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        Watchlist watchlist = watchlistService.findById(watchlistId);
+        if (!watchlist.getUserId().equals(user.getId())) {
+            throw new SecurityException("Unauthorized to access this watchlist");
+        }
+        watchlistService.deleteItemToWatchlist(coinId, watchlistId);
+        return ResponseEntity.ok("delete coin success.");
+    }
+
+        @DeleteMapping("/{watchlistId}")
     public ResponseEntity<String> deleteWatchlist(@RequestHeader("Authorization") String jwt, @PathVariable Long watchlistId) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         Watchlist watchlist = watchlistService.findById(watchlistId);
         if (!watchlist.getUserId().equals(user.getId())) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            throw new SecurityException("Unauthorized to access this watchlist");
         }
         watchlistService.deleteWatchlist(watchlistId);
-        return new ResponseEntity<>("Delete watchlist successfully.", HttpStatus.CREATED);
-    }
-
-    @GetMapping("/{watchlistId}")
-    public ResponseEntity<Watchlist> getWatchlistById(@RequestHeader("Authorization") String jwt, @PathVariable Long watchlistId) throws Exception {
-        UserDTO user = userService.getUserProfile(jwt);
-        Watchlist watchlist = watchlistService.findById(watchlistId);
-        if (!watchlist.getUserId().equals(user.getId())) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-        }
-        return new ResponseEntity<>(watchlist, HttpStatus.OK);
-    }
-
-    @PatchMapping("/{watchlistId}/addCoin/{coinId}")
-    public ResponseEntity<CoinDTO> addItemToWatchList(@RequestHeader("Authorization") String jwt, @PathVariable String coinId, @PathVariable Long watchlistId) throws Exception {
-        UserDTO user = userService.getUserProfile(jwt);
-        CoinDTO coinDTO = coinService.getCoinById(coinId);
-        String coin = watchlistService.addItemToWatchList(coinDTO.getId(), watchlistId);
-        return new ResponseEntity<>(coinDTO, HttpStatus.OK);
-    }
-
-    @DeleteMapping("/{watchlistId}/deleteCoin/{coinId}")
-    public ResponseEntity<String> deleteItemToWatchList(@RequestHeader("Authorization") String jwt, @PathVariable String coinId, @PathVariable Long watchlistId) throws Exception {
-        UserDTO user = userService.getUserProfile(jwt);
-        Watchlist watchlist = watchlistService.findById(watchlistId);
-        if (!watchlist.getUserId().equals(user.getId())) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-        }
-        watchlistService.deleteItemToWatchlist(coinId, watchlistId);
-        return new ResponseEntity<>("Delete coin successfully.", HttpStatus.OK);
+        return ResponseEntity.ok("Watchlist deleted successfully.");
     }
 }
