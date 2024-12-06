@@ -1,9 +1,6 @@
 package com.duc.wallet_service.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,5 +16,6 @@ public class Wallet {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private Long userId;
+    @Column(precision = 19, scale = 6)
     private BigDecimal balance;
 }
