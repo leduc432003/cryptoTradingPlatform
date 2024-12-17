@@ -1,6 +1,7 @@
 package com.duc.payment_service.controller;
 
 import com.duc.payment_service.dto.UserDTO;
+import com.duc.payment_service.dto.UserRole;
 import com.duc.payment_service.model.PaymentDetails;
 import com.duc.payment_service.service.PaymentDetailsService;
 import com.duc.payment_service.service.UserService;
@@ -28,6 +29,17 @@ public class PaymentDetailsController {
     public ResponseEntity<PaymentDetails> getUserPaymentDetails(@RequestHeader("Authorization") String jwt) {
         UserDTO user = userService.getUserProfile(jwt);
         PaymentDetails paymentDetails = paymentDetailsService.getUserPayment(user.getId());
+        return new ResponseEntity<>(paymentDetails, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/admin/{id}")
+    public ResponseEntity<PaymentDetails> getUserPaymentDetailsById(@RequestHeader("Authorization") String jwt, @PathVariable Long id) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        if(!user.getRole().equals(UserRole.ROLE_ADMIN)) {
+            throw new Exception("Only admin can payment details");
+        }
+
+        PaymentDetails paymentDetails = paymentDetailsService.getUserPayment(id);
         return new ResponseEntity<>(paymentDetails, HttpStatus.CREATED);
     }
 }

@@ -22,7 +22,7 @@ import java.util.Map;
 @Service
 public class ChatbotServiceImpl implements ChatbotService {
 
-    String GEMINI_API_KEY = "AIzaSyCkU52QVC-1OiM5-Omsrs-SfnlM7yKB64U";
+    String GEMINI_API_KEY = "AIzaSyA0rm-ZDhmguLjggcdUzosOt5d0x6v8574";
 
     private double convertToDouble(Object value) {
         if (value == null) return 0.0;
@@ -129,6 +129,42 @@ public class ChatbotServiceImpl implements ChatbotService {
     @Override
     public ApiResponse getCoinDetails(String prompt) throws Exception {
         FunctionResponse res = getFunctionResponse(prompt);
+        if(res.getFunctionName().equals("getWithdrawalSteps")) {
+            ApiResponse withdrawalStepsResponse = new ApiResponse();
+            String withdrawalSteps = "Các bước để thực hiện rút tiền:\n" +
+                    "1. Đăng nhập vào tài khoản của bạn.\n" +
+                    "2. Chọn mục 'Rút tiền' hoặc 'Withdraw' từ menu.\n" +
+                    "3. Nhập số tiền bạn muốn rút và nhập số tài khoản ngân hàng.\n" +
+                    "4. Kiểm tra lại thông tin giao dịch và xác nhận.\n" +
+                    "5. Chờ xác nhận từ admin hoặc hệ thống.\n" +
+                    "6. Hoàn thành giao dịch và nhận tiền vào tài khoản của bạn.";
+            withdrawalStepsResponse.setMessage(withdrawalSteps);
+            return withdrawalStepsResponse;
+        } else if (res.getFunctionName().equals("getDepositSteps")) {
+            ApiResponse depositStepsResponse = new ApiResponse();
+            String depositSteps = "Các bước để thực hiện nạp tiền:\n" +
+                    "1. Đăng nhập vào tài khoản của bạn.\n" +
+                    "2. Chọn mục 'Nạp tiền' hoặc 'Deposit' từ menu.\n" +
+                    "3. Nhập số tiền bạn muốn nạp.\n" +
+                    "4. Quét mã QR để chuyển khoản và không được thay đổi thông tin chuyển khoản.\n" +
+                    "5. Chờ hệ thống xác nhận và hoàn tất giao dịch.\n" +
+                    "6. Tiền sẽ được nạp vào tài khoản của bạn.";
+            depositStepsResponse.setMessage(depositSteps);
+            return depositStepsResponse;
+        } else if (res.getFunctionName().equals("getTransactionSteps")) {
+            ApiResponse transactionStepsResponse = new ApiResponse();
+            String transactionSteps = "Các bước để thực hiện giao dịch:\n" +
+                    "1. Đăng nhập vào tài khoản của bạn.\n" +
+                    "2. Chọn mục 'Giao dịch' hoặc 'Trade' từ menu.\n" +
+                    "3. Chọn loại giao dịch bạn muốn thực hiện (Mua hoặc Bán).\n" +
+                    "4. Nhập số lượng tiền bạn muốn giao dịch và xác nhận.\n" +
+                    "5. Kiểm tra lại thông tin giao dịch và xác nhận.\n" +
+                    "6. Chờ hệ thống xử lý và hoàn tất giao dịch.\n" +
+                    "7. Xem kết quả giao dịch trong tài khoản của bạn.";
+            transactionStepsResponse.setMessage(transactionSteps);
+            return transactionStepsResponse;
+        }
+
         CoinDto apiResponse = makeApiRequest(res.getCurrencyName().toLowerCase());
         String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY;
         HttpHeaders headers = new HttpHeaders();
@@ -288,7 +324,40 @@ public class ChatbotServiceImpl implements ChatbotService {
                                                                         )))
                                                         .put("required", new JSONArray()
                                                                 .put("currencyName")
-                                                                .put("currencyData")))))))
+                                                                .put("currencyData"))))
+                                        .put(new JSONObject()
+                                                .put("name", "getWithdrawalSteps")
+                                                .put("description", "Get the steps to perform a withdrawal")
+                                                .put("parameters", new JSONObject()
+                                                        .put("type", "OBJECT")
+                                                        .put("properties", new JSONObject()
+                                                                .put("prompt", new JSONObject()
+                                                                        .put("type", "STRING")
+                                                                        .put("description", "The question or prompt for withdrawal steps."))
+                                                        )
+                                                        .put("required", new JSONArray().put("prompt"))))
+                                        .put(new JSONObject()
+                                                .put("name", "getDepositSteps")
+                                                .put("description", "Get the steps to perform a deposit")
+                                                .put("parameters", new JSONObject()
+                                                        .put("type", "OBJECT")
+                                                        .put("properties", new JSONObject()
+                                                                .put("prompt", new JSONObject()
+                                                                        .put("type", "STRING")
+                                                                        .put("description", "The prompt for deposit steps.")))
+                                                        .put("required", new JSONArray().put("prompt"))))
+                                        .put(new JSONObject()
+                                                .put("name", "getTransactionSteps")
+                                                .put("description", "Get the steps to perform a transaction")
+                                                .put("parameters", new JSONObject()
+                                                        .put("type", "OBJECT")
+                                                        .put("properties", new JSONObject()
+                                                                .put("prompt", new JSONObject()
+                                                                        .put("type", "STRING")
+                                                                        .put("description", "The question or prompt for transaction steps.")))
+                                                        .put("required", new JSONArray().put("prompt"))))
+                                )
+                        ))
                 ;
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -299,7 +368,7 @@ public class ChatbotServiceImpl implements ChatbotService {
 
         JSONObject jsonObject = new JSONObject(responseBody);
         JSONArray candidatesArray = jsonObject.getJSONArray("candidates");
-
+        System.out.println(candidatesArray);
         try {
             if (candidatesArray.length() > 0) {
                 JSONObject candidateObject = candidatesArray.getJSONObject(0);
@@ -313,18 +382,44 @@ public class ChatbotServiceImpl implements ChatbotService {
                     String functionName = functionCallObject.getString("name");
                     JSONObject argsObject = functionCallObject.getJSONObject("args");
 
-                    String currencyData = argsObject.getString("currencyData");
-                    String currencyName = argsObject.getString("currencyName");
 
-                    // Output the values
-                    System.out.println("Function Name: " + functionName);
-                    System.out.println("Currency Data: " + currencyData);
-                    System.out.println("Currency Name: " + currencyName);
-                    FunctionResponse res = new FunctionResponse();
-                    res.setFunctionName(functionName);
-                    res.setCurrencyName(currencyName);
-                    res.setCurrencyData(currencyData);
-                    return res;
+                    if ("getCoinDetails".equals(functionName)) {
+                        String currencyData = argsObject.getString("currencyData");
+                        String currencyName = argsObject.getString("currencyName");
+
+                        FunctionResponse res = new FunctionResponse();
+                        res.setFunctionName(functionName);
+                        res.setCurrencyName(currencyName);
+                        res.setCurrencyData(currencyData);
+                        return res;
+                    } else if ("getWithdrawalSteps".equals(functionName)) {
+                        String promptValue = argsObject.getString("prompt");
+
+                        System.out.println("Function Name: " + functionName);
+                        System.out.println("Prompt: " + promptValue);
+
+                        FunctionResponse res = new FunctionResponse();
+                        res.setFunctionName(functionName);
+                        res.setCurrencyName(promptValue);
+                        return res;
+                    } else if ("getDepositSteps".equals(functionName)) {
+                        String promptValue = argsObject.getString("prompt");
+
+                        System.out.println("Function Name: " + functionName);
+                        System.out.println("Prompt: " + promptValue);
+
+                        FunctionResponse res = new FunctionResponse();
+                        res.setFunctionName(functionName);
+                        res.setCurrencyName(promptValue);
+                        return res;
+                    } else if ("getTransactionSteps".equals(functionName)) {
+                        String promptValue = argsObject.getString("prompt");
+
+                        FunctionResponse res = new FunctionResponse();
+                        res.setFunctionName(functionName);
+                        res.setCurrencyName(promptValue);
+                        return res;
+                    }
                 }
             }
         } catch (Exception e) {

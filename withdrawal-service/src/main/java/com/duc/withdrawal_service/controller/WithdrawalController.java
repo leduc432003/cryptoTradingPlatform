@@ -1,12 +1,10 @@
 package com.duc.withdrawal_service.controller;
 
-import com.duc.withdrawal_service.dto.UserDTO;
-import com.duc.withdrawal_service.dto.UserRole;
-import com.duc.withdrawal_service.dto.WalletDTO;
-import com.duc.withdrawal_service.dto.WalletTransactionType;
+import com.duc.withdrawal_service.dto.*;
 import com.duc.withdrawal_service.dto.request.AddBalanceRequest;
 import com.duc.withdrawal_service.model.Withdrawal;
 import com.duc.withdrawal_service.model.WithdrawalStatus;
+import com.duc.withdrawal_service.service.PaymentDetailsService;
 import com.duc.withdrawal_service.service.UserService;
 import com.duc.withdrawal_service.service.WalletService;
 import com.duc.withdrawal_service.service.WithdrawalService;
@@ -25,14 +23,14 @@ public class WithdrawalController {
     private final WithdrawalService withdrawalService;
     private final UserService userService;
     private final WalletService walletService;
+    private final PaymentDetailsService paymentDetailsService;
     @Value("${internal.service.token}")
     private String internalServiceToken;
 
     @PostMapping("/{amount}")
-    public ResponseEntity<Withdrawal> withdrawalRequest(@RequestHeader("Authorization") String jwt, @PathVariable Long amount) {
+    public ResponseEntity<Withdrawal> withdrawalRequest(@RequestHeader("Authorization") String jwt, @PathVariable Long amount) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
-        WalletDTO wallet = walletService.getUserWallet(jwt);
-        Withdrawal withdrawal = withdrawalService.requestWithdrawal(amount, user.getId());
+        Withdrawal withdrawal = withdrawalService.requestWithdrawal(jwt, amount, user.getId());
         AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
         addBalanceRequest.setUserId(user.getId());
         addBalanceRequest.setMoney(-withdrawal.getAmount());
@@ -67,13 +65,24 @@ public class WithdrawalController {
     }
 
     @GetMapping("/admin")
-    public ResponseEntity<List<Withdrawal>> getAllWithdrawalHistory(@RequestHeader("Authorization") String jwt, @RequestParam(required = false) WithdrawalStatus withdrawalStatus) throws Exception {
+    public ResponseEntity<List<WithdrawalDetailDTO>> getAllWithdrawalHistory(@RequestHeader("Authorization") String jwt, @RequestParam(required = false) WithdrawalStatus withdrawalStatus) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         if(!user.getRole().equals(UserRole.ROLE_ADMIN)) {
             throw new Exception("Only admin can watch withdrawal");
         }
         List<Withdrawal> withdrawalList = withdrawalService.getAllWithdrawalRequest(withdrawalStatus);
+        List<WithdrawalDetailDTO> withdrawalDetails = withdrawalList.stream().map(withdrawal -> {
+            PaymentDetailsDTO bankAccount = paymentDetailsService.getUserPaymentDetailsById(jwt, withdrawal.getUserId());
+            WithdrawalDetailDTO detail = new WithdrawalDetailDTO();
+            detail.setWithdrawal(withdrawal);
+            if (bankAccount != null) {
+                detail.setBankAccount(bankAccount.getAccountNumber());
+                detail.setBankName(bankAccount.getBankName());
+                detail.setAccountHolderName(bankAccount.getAccountName());
+            }
+            return detail;
+        }).toList();
 
-        return new ResponseEntity<>(withdrawalList, HttpStatus.OK);
+        return new ResponseEntity<>(withdrawalDetails, HttpStatus.OK);
     }
 }
