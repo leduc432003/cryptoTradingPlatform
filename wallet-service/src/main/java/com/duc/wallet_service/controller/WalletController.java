@@ -47,6 +47,8 @@ public class WalletController {
         UserDTO senderUser = userService.getUserProfile(jwt);
         Wallet receiverWallet = walletService.findWalletById(walletId);
         Wallet wallet = walletService.transferToAnotherWallet(senderUser.getId(), receiverWallet, walletTransaction.getAmount());
+        walletTransactionService.createWalletTransaction(wallet, WalletTransactionType.WALLET_TRANSFER, String.valueOf(receiverWallet.getId()), walletTransaction.getPurpose(), walletTransaction.getAmount().negate());
+        walletTransactionService.createWalletTransaction(receiverWallet, WalletTransactionType.WALLET_TRANSFER, String.valueOf(receiverWallet.getId()), walletTransaction.getPurpose(), walletTransaction.getAmount());
         return new ResponseEntity<>(wallet, HttpStatus.OK);
     }
 
