@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -28,7 +29,7 @@ public class PaymentController {
         return new ResponseEntity<>(payment, HttpStatus.CREATED);
     }
 
-    @GetMapping("/check/{paymentId}")
+    @PutMapping("/check/{paymentId}")
     public ResponseEntity<Map<String, String>> checkPaymentStatus(@RequestHeader("Authorization") String jwt, @PathVariable Long paymentId) {
         try {
             boolean isSuccessful = paymentService.checkPaymentStatus(paymentId);
@@ -37,5 +38,12 @@ public class PaymentController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Payment>> getPaymentsByUserId(@RequestHeader("Authorization") String jwt) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        List<Payment> payments = paymentService.getPayments(user.getId());
+        return new ResponseEntity<>(payments, HttpStatus.OK);
     }
 }

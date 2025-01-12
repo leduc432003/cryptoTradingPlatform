@@ -23,6 +23,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -87,9 +88,13 @@ public class PaymentServiceImpl implements PaymentService {
             throw new IllegalArgumentException("Payment not found");
         }
 
+        if (paymentOptional.get().getStatus() != PaymentStatus.PENDING) {
+            return false;
+        }
+
         Payment payment = paymentOptional.get();
         BigDecimal amountInVnd = payment.getAmountInVnd();
-        BigDecimal amount = payment.getAmountInVnd();
+        BigDecimal amount = payment.getAmount();
         String qrContent = payment.getContent().toUpperCase().replace("-", "");
 
         String apiUrl = "https://my.sepay.vn/userapi/transactions/list?account_number=0972024254&limit=20";
@@ -105,7 +110,7 @@ public class PaymentServiceImpl implements PaymentService {
             JsonNode jsonNode = objectMapper.readTree(response.body());
             JsonNode transactionsNode = jsonNode.path("transactions");
             for (JsonNode transactionNode : transactionsNode) {
-                String transactionContent = transactionNode.path("transaction_content").asText();
+                String transactionContent = transactionNode.path("transaction_content").asText().toUpperCase();
                 BigDecimal amountIn = new BigDecimal(transactionNode.path("amount_in").asText());
 
                 if (transactionContent.contains(qrContent) && amountIn.compareTo(amountInVnd) == 0) {
@@ -119,12 +124,19 @@ public class PaymentServiceImpl implements PaymentService {
                     return true;
                 }
             }
-            payment.setStatus(PaymentStatus.FAILED);
-            paymentRepository.save(payment);
+            if (payment.getCreatedAt().plusMinutes(30).isBefore(LocalDateTime.now())) {
+                payment.setStatus(PaymentStatus.FAILED);
+                paymentRepository.save(payment);
+            }
             return false;
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             throw new Exception(e.getMessage());
         }
+    }
+
+    @Override
+    public List<Payment> getPayments(Long userId) throws Exception {
+        return paymentRepository.findByUserId(userId);
     }
 
     private String generateQrLink(Long userId, BigDecimal amount, String content) {
