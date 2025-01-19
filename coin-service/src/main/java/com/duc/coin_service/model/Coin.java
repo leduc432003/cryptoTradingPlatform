@@ -2,6 +2,7 @@ package com.duc.coin_service.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
@@ -9,6 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 @Data
@@ -73,4 +75,7 @@ public class Coin {
     private double priceChangePercentage1hInCurrency;
     @JsonProperty("price_change_percentage_7d_in_currency")
     private double priceChangePercentage7dInCurrency;
+    @JsonProperty("minimum_buy_price")
+    @Column(precision = 19, scale = 6)
+    private BigDecimal minimumBuyPrice;
 }

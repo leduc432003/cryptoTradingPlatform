@@ -68,9 +68,8 @@ public class CoinController {
 
     @GetMapping("/{coinId}")
     ResponseEntity<Coin> getCoinById(@PathVariable String coinId) throws Exception {
-        String coin = coinService.getCoinDetails(coinId);
-        Coin coin1 = coinService.findById(coinId);
-        return new ResponseEntity<>(coin1, HttpStatus.OK);
+        Coin coin = coinService.findById(coinId);
+        return new ResponseEntity<>(coin, HttpStatus.OK);
     }
 
     @GetMapping("/trending")

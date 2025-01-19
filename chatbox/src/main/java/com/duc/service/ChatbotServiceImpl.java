@@ -22,7 +22,7 @@ import java.util.Map;
 @Service
 public class ChatbotServiceImpl implements ChatbotService {
 
-    String GEMINI_API_KEY = "AIzaSyA0rm-ZDhmguLjggcdUzosOt5d0x6v8574";
+    String GEMINI_API_KEY = "AIzaSyBAUQSTInRzRy636hndJ2UF9wwqlAOaoOY";
 
     private double convertToDouble(Object value) {
         if (value == null) return 0.0;

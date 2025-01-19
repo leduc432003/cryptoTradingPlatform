@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -41,7 +42,9 @@ public class CoinServiceImpl implements CoinService {
 
     @Override
     public List<Coin> getCoinList(int page) throws Exception {
-        String url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=50&price_change_percentage=1h%2C7d&page=" + page;
+        List<String> coinList1 = coinRepository.findAllCoinIds();
+        String list = coinList1.toString().replaceAll("[\\[\\]]", "").replaceAll("\\s+", "");
+        String url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=50&price_change_percentage=1h%2C7d&page=" + page + "&ids=" + list;
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -197,7 +200,11 @@ public class CoinServiceImpl implements CoinService {
             }
 
 
-            coinRepository.save(coin);
+            if (coinRepository.existsById(coinId)) {
+                Optional<Coin> coin1 = coinRepository.findById(coinId);
+                coin.setMinimumBuyPrice(coin1.get().getMinimumBuyPrice());
+                coinRepository.save(coin);
+            }
             return response.body();
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             throw new Exception(e.getMessage());
@@ -210,6 +217,7 @@ public class CoinServiceImpl implements CoinService {
         if(coin.isEmpty()) {
             throw new Exception("coin not found");
         }
+        getCoinDetails(coinId);
         return coin.get();
     }
 
@@ -342,5 +350,115 @@ public class CoinServiceImpl implements CoinService {
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             throw new Exception(e.getMessage());
         }
+    }
+
+    @Override
+    public Coin addCoin(String coinId, double minimumBuyPrice) throws Exception {
+        Optional<Coin> coinOptional = coinRepository.findById(coinId);
+        if(coinOptional.isPresent()) {
+            throw new Exception(coinId + " already exists");
+        }
+        if (minimumBuyPrice <= 0) {
+            throw new Exception("Minimum sell price must be greater than 0");
+        }
+
+        String url = "https://api.coingecko.com/api/v3/coins/" + coinId;
+
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Accept", "application/json")
+                    .header("x-cg-demo-api-key", API_KEY)
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            JsonNode jsonNode = objectMapper.readTree(response.body());
+            JsonNode marketData = jsonNode.get("market_data");
+            Coin coin = Coin.builder()
+                    .id(jsonNode.get("id").asText())
+                    .name(jsonNode.get("name").asText())
+                    .symbol(jsonNode.get("symbol").asText())
+                    .image(jsonNode.get("image").get("large").asText())
+                    .currentPrice(marketData.get("current_price").get("usd").asDouble())
+                    .marketCap(marketData.get("market_cap").get("usd").asLong())
+                    .marketCapRank(marketData.get("market_cap_rank").asInt())
+                    .fullyDilutedValuation(marketData.get("fully_diluted_valuation").asLong())
+                    .totalVolume(marketData.get("total_volume").get("usd").asLong())
+                    .high24h(marketData.get("high_24h").get("usd").asDouble())
+                    .low24h(marketData.get("low_24h").get("usd").asDouble())
+                    .priceChange24h(marketData.get("price_change_24h").asDouble())
+                    .priceChangePercentage24h(marketData.get("price_change_percentage_24h").asDouble())
+                    .marketCapChange24h(marketData.get("market_cap_change_24h").asLong())
+                    .marketCapChangePercentage24h((marketData.get("market_cap_change_percentage_24h").asDouble()))
+                    .priceChangePercentage1hInCurrency(marketData.get("price_change_percentage_1h_in_currency").get("usd").asDouble())
+                    .priceChangePercentage7dInCurrency(marketData.get("price_change_percentage_7d_in_currency").get("usd").asDouble())
+                    .maxSupply(marketData.get("max_supply").asLong())
+                    .totalSupply(marketData.get("total_supply").asLong())
+                    .ath(marketData.get("ath").get("usd").asLong())
+                    .athChangePercentage(marketData.get("ath_change_percentage").get("usd").asDouble())
+                    .atl(marketData.get("atl").get("usd").asDouble())
+                    .atlChangePercentage(marketData.get("atl_change_percentage").get("usd").asDouble())
+                    .build();
+            JsonNode athDateNode = marketData.get("ath_date");
+            if (athDateNode != null && athDateNode.has("usd")) {
+                String athDateUsd = athDateNode.get("usd").asText();
+                if (athDateUsd != null) {
+                    Date athDate = parseIsoDate(athDateUsd);
+                    coin.setAthDate(athDate);
+                } else {
+                    System.err.println("ath_date for USD is missing");
+                    coin.setAthDate(null);
+                }
+            } else {
+                System.err.println("ath_date data is missing");
+                coin.setAthDate(null);
+            }
+
+            JsonNode atlDateNode = marketData.get("atl_date");
+            if (atlDateNode != null && atlDateNode.has("usd")) {
+                String atlDateUsd = atlDateNode.get("usd").asText();
+                if (atlDateUsd != null) {
+                    Date atlDate = parseIsoDate(atlDateUsd);
+                    coin.setAtlDate(atlDate);
+                } else {
+                    System.err.println("atl_date for USD is missing");
+                    coin.setAtlDate(null);
+                }
+            } else {
+                System.err.println("atl_date data is missing");
+                coin.setAtlDate(null);
+            }
+
+            String lastUpdated = jsonNode.get("last_updated").asText();
+            if (lastUpdated != null) {
+                Date lastUpdatedDate = parseIsoDate(lastUpdated);
+                coin.setLastUpdated(lastUpdatedDate);
+            } else {
+                System.err.println("Last updated date is missing");
+                coin.setLastUpdated(null);
+            }
+
+            coin.setMinimumBuyPrice(BigDecimal.valueOf(minimumBuyPrice));
+
+            return coinRepository.save(coin);
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    @Override
+    public Coin updateCoin(String coinId, double minimumBuyPrice) throws Exception {
+        if (minimumBuyPrice <= 0) {
+            throw new Exception("Minimum sell price must be greater than 0");
+        }
+        Coin coin = findById(coinId);
+        coin.setMinimumBuyPrice(BigDecimal.valueOf(minimumBuyPrice));
+        return coinRepository.save(coin);
+    }
+
+    @Override
+    public void deleteCoin(String coinId) {
+        coinRepository.deleteById(coinId);
     }
 }
