@@ -9,4 +9,5 @@ import lombok.NoArgsConstructor;
 @Data
 public class UpdateCoinRequest {
     private double minimumBuyPrice;
+    private double transactionFee;
 }

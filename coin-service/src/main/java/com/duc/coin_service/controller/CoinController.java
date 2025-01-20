@@ -115,4 +115,10 @@ public class CoinController {
         JsonNode jsonNode = objectMapper.readTree(coin);
         return new ResponseEntity<>(jsonNode, HttpStatus.OK);
     }
+
+    @GetMapping("/new-listing")
+    public ResponseEntity<List<Coin>> getNewCoins() {
+        List<Coin> newListing = coinService.getNewCoins();
+        return new ResponseEntity<>(newListing, HttpStatus.OK);
+    }
 }

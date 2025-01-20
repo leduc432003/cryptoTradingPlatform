@@ -18,6 +18,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -203,6 +204,7 @@ public class CoinServiceImpl implements CoinService {
             if (coinRepository.existsById(coinId)) {
                 Optional<Coin> coin1 = coinRepository.findById(coinId);
                 coin.setMinimumBuyPrice(coin1.get().getMinimumBuyPrice());
+                coin.setTransactionFee(coin1.get().getTransactionFee());
                 coinRepository.save(coin);
             }
             return response.body();
@@ -353,7 +355,7 @@ public class CoinServiceImpl implements CoinService {
     }
 
     @Override
-    public Coin addCoin(String coinId, double minimumBuyPrice) throws Exception {
+    public Coin addCoin(String coinId, double minimumBuyPrice, double transactionFee) throws Exception {
         Optional<Coin> coinOptional = coinRepository.findById(coinId);
         if(coinOptional.isPresent()) {
             throw new Exception(coinId + " already exists");
@@ -440,6 +442,7 @@ public class CoinServiceImpl implements CoinService {
             }
 
             coin.setMinimumBuyPrice(BigDecimal.valueOf(minimumBuyPrice));
+            coin.setTransactionFee(BigDecimal.valueOf(transactionFee));
 
             return coinRepository.save(coin);
         } catch (HttpClientErrorException | HttpServerErrorException e) {
@@ -448,17 +451,39 @@ public class CoinServiceImpl implements CoinService {
     }
 
     @Override
-    public Coin updateCoin(String coinId, double minimumBuyPrice) throws Exception {
+    public Coin updateCoin(String coinId, double minimumBuyPrice, double transactionFee) throws Exception {
         if (minimumBuyPrice <= 0) {
             throw new Exception("Minimum sell price must be greater than 0");
         }
+
+        if (transactionFee < 0) {
+            throw new Exception("Minimum sell price must be greater than 0 or = 0");
+        }
         Coin coin = findById(coinId);
         coin.setMinimumBuyPrice(BigDecimal.valueOf(minimumBuyPrice));
+        coin.setTransactionFee(BigDecimal.valueOf(transactionFee));
         return coinRepository.save(coin);
     }
 
     @Override
     public void deleteCoin(String coinId) {
         coinRepository.deleteById(coinId);
+    }
+
+    @Override
+    public Coin updateIsNewStatus(String id, boolean isNew) {
+        Optional<Coin> coinOptional = coinRepository.findById(id);
+        if (coinOptional.isPresent()) {
+            Coin coin = coinOptional.get();
+            coin.setNew(isNew);
+            return coinRepository.save(coin);
+        } else {
+            throw new RuntimeException("Coin with ID " + id + " not found");
+        }
+    }
+
+    @Override
+    public List<Coin> getNewCoins() {
+        return coinRepository.findByIsNewTrue();
     }
 }

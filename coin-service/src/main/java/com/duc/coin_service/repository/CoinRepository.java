@@ -11,4 +11,5 @@ import java.util.List;
 public interface CoinRepository extends JpaRepository<Coin, String> {
     @Query("SELECT c.id FROM Coin c")
     List<String> findAllCoinIds();
+    List<Coin> findByIsNewTrue();
 }

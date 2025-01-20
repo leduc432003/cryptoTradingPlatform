@@ -78,4 +78,9 @@ public class Coin {
     @JsonProperty("minimum_buy_price")
     @Column(precision = 19, scale = 6)
     private BigDecimal minimumBuyPrice;
+    @JsonProperty("transaction_fee")
+    @Column(precision = 19, scale = 6)
+    private BigDecimal transactionFee;
+    @JsonProperty("is_new")
+    private boolean isNew = false;
 }

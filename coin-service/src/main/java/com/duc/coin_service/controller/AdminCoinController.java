@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/coins")
@@ -25,7 +27,7 @@ public class AdminCoinController {
         if(user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can add coin");
         }
-        Coin newCoin = coinService.addCoin(request.getCoinId(), request.getMinimumBuyPrice());
+        Coin newCoin = coinService.addCoin(request.getCoinId(), request.getMinimumBuyPrice(), request.getTransactionFee());
         return new ResponseEntity<>(newCoin, HttpStatus.CREATED);
     }
 
@@ -35,7 +37,7 @@ public class AdminCoinController {
         if(user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can update coin");
         }
-        Coin newCoin = coinService.updateCoin(coinId, request.getMinimumBuyPrice());
+        Coin newCoin = coinService.updateCoin(coinId, request.getMinimumBuyPrice(), request.getTransactionFee());
         return new ResponseEntity<>(newCoin, HttpStatus.OK);
     }
 
@@ -47,5 +49,10 @@ public class AdminCoinController {
         }
         coinService.deleteCoin(coinId);
         return new ResponseEntity<>("Coin deleted successfully", HttpStatus.OK);
+    }
+
+    @PutMapping("/{coinId}/is-new")
+    public Coin updateIsNewStatus(@RequestHeader("Authorization") String jwt, @PathVariable String coinId, @RequestParam boolean isNew) {
+        return coinService.updateIsNewStatus(coinId, isNew);
     }
 }
