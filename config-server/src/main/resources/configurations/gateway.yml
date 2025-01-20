@@ -19,7 +19,7 @@ spring:
           uri:
             lb://coin-service
           predicates:
-            - Path=/api/coins/**
+            - Path=/api/coins/**, /api/admin/coins/**
         - id: trading-service
           uri:
             lb://trading-service
