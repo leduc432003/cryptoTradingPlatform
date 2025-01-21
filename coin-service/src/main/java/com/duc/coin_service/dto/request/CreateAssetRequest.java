@@ -4,11 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
-public class UpdateCoinRequest {
-    private double minimumBuyPrice;
-    private double transactionFee;
-    private Long totalSupply;
+public class CreateAssetRequest {
+    private Long userId;
+    private String coinId;
+    private double quantity;
 }

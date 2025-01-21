@@ -37,7 +37,7 @@ public class AdminCoinController {
         if(user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can update coin");
         }
-        Coin newCoin = coinService.updateCoin(coinId, request.getMinimumBuyPrice(), request.getTransactionFee());
+        Coin newCoin = coinService.updateCoin(coinId, request.getMinimumBuyPrice(), request.getTransactionFee(), request.getTotalSupply());
         return new ResponseEntity<>(newCoin, HttpStatus.OK);
     }
 

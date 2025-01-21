@@ -1,12 +1,16 @@
 package com.duc.coin_service.service.impl;
 
+import com.duc.coin_service.dto.AssetDTO;
+import com.duc.coin_service.dto.request.CreateAssetRequest;
 import com.duc.coin_service.model.Coin;
 import com.duc.coin_service.repository.CoinRepository;
+import com.duc.coin_service.service.AssetService;
 import com.duc.coin_service.service.CoinService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
@@ -18,7 +22,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +31,11 @@ import java.util.Optional;
 public class CoinServiceImpl implements CoinService {
     private final ObjectMapper objectMapper;
     private final CoinRepository coinRepository;
+    private final AssetService assetService;
+    @Value("${internal.service.token}")
+    private String internalServiceToken;
     private static final String API_KEY = "CG-HfJNVa7kfaaTEWbWDmjDQnWM";
+    private static final Long ADMIN_ID = 2L;
 
     public Date parseIsoDate(String dateString) {
         try {
@@ -356,8 +363,7 @@ public class CoinServiceImpl implements CoinService {
 
     @Override
     public Coin addCoin(String coinId, double minimumBuyPrice, double transactionFee) throws Exception {
-        Optional<Coin> coinOptional = coinRepository.findById(coinId);
-        if(coinOptional.isPresent()) {
+        if(coinRepository.existsById(coinId)) {
             throw new Exception(coinId + " already exists");
         }
         if (minimumBuyPrice <= 0) {
@@ -451,7 +457,7 @@ public class CoinServiceImpl implements CoinService {
     }
 
     @Override
-    public Coin updateCoin(String coinId, double minimumBuyPrice, double transactionFee) throws Exception {
+    public Coin updateCoin(String coinId, double minimumBuyPrice, double transactionFee, Long totalSupply) throws Exception {
         if (minimumBuyPrice <= 0) {
             throw new Exception("Minimum sell price must be greater than 0");
         }
@@ -462,6 +468,18 @@ public class CoinServiceImpl implements CoinService {
         Coin coin = findById(coinId);
         coin.setMinimumBuyPrice(BigDecimal.valueOf(minimumBuyPrice));
         coin.setTransactionFee(BigDecimal.valueOf(transactionFee));
+
+        AssetDTO oldAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coin.getId(), ADMIN_ID);
+        if (oldAsset == null) {
+            CreateAssetRequest assetRequest = new CreateAssetRequest();
+            assetRequest.setUserId(ADMIN_ID);
+            assetRequest.setCoinId(coinId);
+            assetRequest.setQuantity(totalSupply);
+            assetService.createAsset(internalServiceToken, assetRequest);
+        } else {
+            assetService.updateAsset(internalServiceToken, oldAsset.getId(), totalSupply);
+        }
+
         return coinRepository.save(coin);
     }
 
