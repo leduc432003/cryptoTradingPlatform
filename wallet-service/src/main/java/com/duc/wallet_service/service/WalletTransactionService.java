@@ -13,5 +13,6 @@ public interface WalletTransactionService {
     List<WalletTransaction> getWalletTransactionService(Long walletId);
     List<WalletTransaction> getTransactionsByFilters(Long days, WalletTransactionType transactionType);
     double getTotalAmountByFilters(Long days, WalletTransactionType transactionType);
-    public List<List<Object>> getTotalAmountByDateWithTimestamp(Long days, WalletTransactionType transactionType);
+    List<List<Object>> getTotalAmountByDateWithTimestamp(Long days, WalletTransactionType transactionType);
+    long countBuyAndSellAssetTransactions(Long walletId);
 }

@@ -102,4 +102,15 @@ public class UserServiceImpl implements UserService {
     public List<User> getAllUser() {
         return userRepository.findAll();
     }
+
+    @Override
+    public User getUserByReferralCode(String referralCode) throws Exception {
+        User user = userRepository.findByReferralCode(referralCode);
+        if(user == null) {
+            throw new Exception("User not found");
+        }
+        return user;
+    }
+
+
 }

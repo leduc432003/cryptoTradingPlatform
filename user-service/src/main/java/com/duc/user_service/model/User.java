@@ -25,5 +25,7 @@ public class User {
     @Embedded
     private TwoFactorAuth twoFactorAuth = new TwoFactorAuth();
     private UserRole role = UserRole.ROLE_CUSTOMER;
-
+    private String referralCode;
+    private String referredBy;
+    private int referralCount = 0;
 }

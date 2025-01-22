@@ -1,9 +1,13 @@
 package com.duc.wallet_service.service.impl;
 
+import com.duc.wallet_service.dto.UserDTO;
 import com.duc.wallet_service.model.Wallet;
 import com.duc.wallet_service.model.WalletTransaction;
 import com.duc.wallet_service.model.WalletTransactionType;
+import com.duc.wallet_service.repository.WalletRepository;
 import com.duc.wallet_service.repository.WalletTransactionRepository;
+import com.duc.wallet_service.service.UserService;
+import com.duc.wallet_service.service.WalletService;
 import com.duc.wallet_service.service.WalletTransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,7 +33,6 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
                 .date(LocalDate.now())
                 .amount(amount)
                 .build();
-
         return walletTransactionRepository.save(walletTransaction);
     }
 
@@ -89,5 +92,11 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
                     return result;
                 })
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public long countBuyAndSellAssetTransactions(Long walletId) {
+        return walletTransactionRepository.countByWallet_IdAndWalletTransactionTypeIn(
+                walletId, new WalletTransactionType[]{WalletTransactionType.BUY_ASSET, WalletTransactionType.SELL_ASSET});
     }
 }

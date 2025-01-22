@@ -2,14 +2,17 @@ package com.duc.wallet_service.service.impl;
 
 import com.duc.wallet_service.dto.OrderDTO;
 import com.duc.wallet_service.dto.OrderType;
+import com.duc.wallet_service.dto.UserDTO;
 import com.duc.wallet_service.model.Wallet;
 import com.duc.wallet_service.model.WalletTransactionType;
 import com.duc.wallet_service.repository.WalletRepository;
 import com.duc.wallet_service.service.OrderService;
+import com.duc.wallet_service.service.UserService;
 import com.duc.wallet_service.service.WalletService;
 import com.duc.wallet_service.service.WalletTransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -20,6 +23,7 @@ public class WalletServiceImpl implements WalletService {
     private final WalletRepository walletRepository;
     private final OrderService orderService;
     private final WalletTransactionService walletTransactionService;
+    private final UserService userService;
 
     @Override
     public Wallet getWalletByUserId(Long userId) {
@@ -39,6 +43,16 @@ public class WalletServiceImpl implements WalletService {
         BigDecimal newBalance = balance.add(BigDecimal.valueOf(money));
         wallet.setBalance(newBalance);
         walletTransactionService.createWalletTransaction(wallet, transactionType, null, transactionType.toString(), BigDecimal.valueOf(money));
+        long buySellCount = walletTransactionService.countBuyAndSellAssetTransactions(wallet.getId());
+        if(buySellCount == 1) {
+            UserDTO userDTO = userService.getUserById(wallet.getUserId());
+            UserDTO referrer = userService.getUserByReferralCode(userDTO.getReferredBy());
+            Wallet walletReferrer = getWalletByUserId(referrer.getId());
+            BigDecimal newBalance1 = walletReferrer.getBalance().add(BigDecimal.valueOf(3));
+            walletReferrer.setBalance(newBalance1);
+            walletTransactionService.createWalletTransaction(walletReferrer, WalletTransactionType.INTRODUCTORY_GIFT, null, "INTRODUCTORY GIFT", BigDecimal.valueOf(3));
+            walletRepository.save(walletReferrer);
+        }
         return walletRepository.save(wallet);
     }
 
@@ -67,6 +81,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
+    @Transactional
     public Wallet payOrderPayment(Long orderId, Long userId, String jwt) throws Exception {
         Wallet wallet = getWalletByUserId(userId);
         OrderDTO order = orderService.getOrderById(jwt, orderId);
@@ -77,6 +92,16 @@ public class WalletServiceImpl implements WalletService {
                 throw new Exception("Not enough money for this transaction");
             }
             walletTransactionService.createWalletTransaction(wallet, WalletTransactionType.BUY_ASSET, null, "BUY ASSET", order.getPrice());
+            long buySellCount = walletTransactionService.countBuyAndSellAssetTransactions(wallet.getId());
+            if(buySellCount == 1) {
+                UserDTO userDTO = userService.getUserById(wallet.getUserId());
+                UserDTO referrer = userService.getUserByReferralCode(userDTO.getReferredBy());
+                Wallet walletReferrer = getWalletByUserId(referrer.getId());
+                BigDecimal newBalance1 = walletReferrer.getBalance().add(BigDecimal.valueOf(3));
+                walletReferrer.setBalance(newBalance1);
+                walletTransactionService.createWalletTransaction(walletReferrer, WalletTransactionType.INTRODUCTORY_GIFT, null, "INTRODUCTORY GIFT", BigDecimal.valueOf(3));
+                walletRepository.save(walletReferrer);
+            }
         } else {
             newBalance = wallet.getBalance().add(order.getPrice());
             walletTransactionService.createWalletTransaction(wallet, WalletTransactionType.SELL_ASSET, null, "SELL ASSET", order.getPrice());

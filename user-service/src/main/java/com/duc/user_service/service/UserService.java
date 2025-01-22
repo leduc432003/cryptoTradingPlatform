@@ -16,4 +16,5 @@ public interface UserService {
     void resetPassword(User user, String newPassword) throws Exception;
     User updateUser(Long id, UserUpdateRequest updateUser) throws Exception;
     List<User> getAllUser();
+    User getUserByReferralCode(String referralCode) throws Exception;
 }

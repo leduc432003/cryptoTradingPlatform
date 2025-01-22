@@ -1,7 +1,8 @@
-package com.duc.wallet_service.dto;
+package com.duc.user_service.dto.request;
 
+import com.duc.user_service.model.TwoFactorAuth;
+import com.duc.user_service.model.UserRole;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.Embedded;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,16 +10,12 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDTO {
+public class UserRequest {
     private Long id;
     private String fullName;
     private String email;
     private String mobile;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
-    private TwoFactorAuth twoFactorAuth = new TwoFactorAuth();
-    private UserRole role = UserRole.ROLE_CUSTOMER;
-    private String referralCode;
     private String referredBy;
-    private int referralCount;
 }

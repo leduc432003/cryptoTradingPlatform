@@ -185,7 +185,7 @@ public class OrderServiceImpl implements OrderService {
         String coinId = limitOrder.getOrderItem().getCoinId();
 
         AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
-        addBalanceRequest.setMoney(-buyPrice);
+        addBalanceRequest.setMoney(-buyPrice * quantity);
         addBalanceRequest.setUserId(limitOrder.getUserId());
         addBalanceRequest.setTransactionType(WalletTransactionType.BUY_ASSET);
         walletService.addBalance(jwt, addBalanceRequest);
@@ -221,7 +221,7 @@ public class OrderServiceImpl implements OrderService {
 
         AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
         addBalanceRequest.setUserId(limitOrder.getUserId());
-        addBalanceRequest.setMoney(sellPrice.doubleValue());
+        addBalanceRequest.setMoney(sellPrice.doubleValue() * limitOrder.getOrderItem().getQuantity());
         addBalanceRequest.setTransactionType(WalletTransactionType.SELL_ASSET);
         walletService.addBalance(jwt, addBalanceRequest);
         orderRepository.save(limitOrder);

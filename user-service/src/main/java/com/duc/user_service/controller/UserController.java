@@ -111,12 +111,22 @@ public class UserController {
     }
 
     @GetMapping("/admin/{userId}")
-    public ResponseEntity<User> getUserById(@RequestHeader("Authorization") String jwt, @PathVariable Long userId) throws Exception {
+    public ResponseEntity<User> adminGetUserById(@RequestHeader("Authorization") String jwt, @PathVariable Long userId) throws Exception {
         User user = userService.findUserProfileByJwt(jwt);
         if(user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can watch user list");
         }
 
         return new ResponseEntity<>(userService.findUserById(userId), HttpStatus.OK);
+    }
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<User> getUserById(@PathVariable Long userId) throws Exception {
+        return new ResponseEntity<>(userService.findUserById(userId), HttpStatus.OK);
+    }
+
+    @GetMapping("/referral-code/ode{referralCode}")
+    public ResponseEntity<User> getUserByReferralCode(@PathVariable String referralCode) throws Exception {
+        return new ResponseEntity<>(userService.getUserByReferralCode(referralCode), HttpStatus.OK);
     }
 }

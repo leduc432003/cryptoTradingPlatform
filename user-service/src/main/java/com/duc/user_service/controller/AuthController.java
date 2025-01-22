@@ -3,6 +3,7 @@ package com.duc.user_service.controller;
 import com.duc.user_service.dto.request.ForgotPasswordRequest;
 import com.duc.user_service.dto.request.LoginRequest;
 import com.duc.user_service.dto.request.ResetPasswordRequest;
+import com.duc.user_service.dto.request.UserRequest;
 import com.duc.user_service.dto.response.ApiResponse;
 import com.duc.user_service.dto.response.AuthResponse;
 import com.duc.user_service.kafka.NotificationEvent;
@@ -11,6 +12,7 @@ import com.duc.user_service.repository.UserRepository;
 import com.duc.user_service.service.*;
 import com.duc.user_service.utils.OtpUtils;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,17 +41,29 @@ public class AuthController {
     private final NewTopic topic;
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthResponse> register(@RequestBody User user) throws Exception {
+    public ResponseEntity<AuthResponse> register(@RequestBody UserRequest user) throws Exception {
         User isEmailExist = userRepository.findByEmail(user.getEmail());
         if(isEmailExist != null) {
             throw new Exception("email is already used with another user");
         }
+        String referralCode = generateReferralCode(user.getFullName());
         User newUser = new User();
         newUser.setEmail(user.getEmail());
         newUser.setPassword(passwordEncoder.encode(user.getPassword()));
         newUser.setMobile(user.getMobile());
         newUser.setAvatar("https://robohash.org/" + user.getFullName() + "?size=200x200");
         newUser.setFullName(user.getFullName());
+        newUser.setReferralCode(referralCode);
+        if (user.getReferredBy() != null) {
+            User referrer = userRepository.findByReferralCode(user.getReferredBy());
+            if (referrer != null) {
+                referrer.setReferralCount(referrer.getReferralCount() + 1);
+                userRepository.save(referrer);
+            } else {
+                throw new Exception("Invalid referral code");
+            }
+            newUser.setReferredBy(user.getReferredBy());
+        }
         User saveUser = userRepository.save(newUser);
 
         Authentication auth = new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword());
@@ -65,6 +79,7 @@ public class AuthController {
 
         return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
     }
+
     @PostMapping("/signin")
     public ResponseEntity<AuthResponse> signin(@RequestBody LoginRequest loginRequest) throws Exception {
         String userName = loginRequest.getEmail();
@@ -174,5 +189,9 @@ public class AuthController {
             return new ResponseEntity<>(res, HttpStatus.ACCEPTED);
         }
         throw new Exception("otp is wrong");
+    }
+
+    private String generateReferralCode(String fullName) {
+        return fullName.substring(0, 3).toUpperCase() + RandomStringUtils.randomNumeric(4);
     }
 }
