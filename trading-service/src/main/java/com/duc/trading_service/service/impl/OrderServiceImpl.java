@@ -254,7 +254,7 @@ public class OrderServiceImpl implements OrderService {
 
         return orderRepository.save(order);
     }
-    
+
     @Transactional
     private Orders sellAsset(String coinId, double quantity, Long userId, String jwt) throws Exception {
         if(quantity <= 0) {
