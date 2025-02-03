@@ -19,8 +19,8 @@ public interface CoinService {
     String getCategoriesList(String order) throws Exception;
     String getNews(String categories, Long timestamp) throws Exception;
     String getNewsArticleCategories() throws Exception;
-    Coin addCoin(String coinId, double minimumBuyPrice, double transactionFee) throws Exception;
-    Coin updateCoin(String coinId, double minimumBuyPrice, double transactionFee, Long totalSupply) throws Exception;
+    Coin addCoin(String coinId, double minimumBuyPrice, double transactionFee, String tradingSymbol) throws Exception;
+    Coin updateCoin(String coinId, double minimumBuyPrice, double transactionFee, Long totalSupply, String tradingSymbol) throws Exception;
     void deleteCoin(String coinId);
     Coin updateIsNewStatus(String id, boolean isNew);
     List<Coin> getNewCoins();

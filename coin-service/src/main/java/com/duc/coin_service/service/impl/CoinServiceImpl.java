@@ -212,6 +212,8 @@ public class CoinServiceImpl implements CoinService {
                 Optional<Coin> coin1 = coinRepository.findById(coinId);
                 coin.setMinimumBuyPrice(coin1.get().getMinimumBuyPrice());
                 coin.setTransactionFee(coin1.get().getTransactionFee());
+                coin.setNew(coin1.get().isNew());
+                coin.setTradingSymbol(coin1.get().getTradingSymbol());
                 coinRepository.save(coin);
             }
             return response.body();
@@ -362,7 +364,7 @@ public class CoinServiceImpl implements CoinService {
     }
 
     @Override
-    public Coin addCoin(String coinId, double minimumBuyPrice, double transactionFee) throws Exception {
+    public Coin addCoin(String coinId, double minimumBuyPrice, double transactionFee, String tradingSymbol) throws Exception {
         if(coinRepository.existsById(coinId)) {
             throw new Exception(coinId + " already exists");
         }
@@ -449,6 +451,7 @@ public class CoinServiceImpl implements CoinService {
 
             coin.setMinimumBuyPrice(BigDecimal.valueOf(minimumBuyPrice));
             coin.setTransactionFee(BigDecimal.valueOf(transactionFee));
+            coin.setTradingSymbol(tradingSymbol);
 
             return coinRepository.save(coin);
         } catch (HttpClientErrorException | HttpServerErrorException e) {
@@ -457,7 +460,7 @@ public class CoinServiceImpl implements CoinService {
     }
 
     @Override
-    public Coin updateCoin(String coinId, double minimumBuyPrice, double transactionFee, Long totalSupply) throws Exception {
+    public Coin updateCoin(String coinId, double minimumBuyPrice, double transactionFee, Long totalSupply, String tradingSymbol) throws Exception {
         if (minimumBuyPrice <= 0) {
             throw new Exception("Minimum sell price must be greater than 0");
         }
@@ -468,6 +471,7 @@ public class CoinServiceImpl implements CoinService {
         Coin coin = findById(coinId);
         coin.setMinimumBuyPrice(BigDecimal.valueOf(minimumBuyPrice));
         coin.setTransactionFee(BigDecimal.valueOf(transactionFee));
+        coin.setTradingSymbol(tradingSymbol);
 
         AssetDTO oldAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coin.getId(), ADMIN_ID);
         if (oldAsset == null) {
