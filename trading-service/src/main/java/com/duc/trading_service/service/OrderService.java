@@ -1,5 +1,6 @@
 package com.duc.trading_service.service;
 
+import com.duc.trading_service.model.OrderStatus;
 import com.duc.trading_service.model.Orders;
 import com.duc.trading_service.model.OrderItem;
 import com.duc.trading_service.model.OrderType;
@@ -13,5 +14,6 @@ public interface OrderService {
     List<Orders> getAllOrdersOfUser(Long userId, OrderType orderType, String assetSymbol);
     void cancelLimitOrder(Long orderId, Long userId) throws Exception;
     Orders processOrder(String coinId, double quantity, BigDecimal stopPrice, BigDecimal limitPrice, OrderType orderType, Long userId, String jwt) throws Exception;
-    List<String> getPendingCoinSymbols();
+    List<Orders> getOrderByStatusAndTradingSymbol(OrderStatus status, String tradingSymbol);
+    void matchOrdersWithPrice(String symbol, BigDecimal currentPrice);
 }

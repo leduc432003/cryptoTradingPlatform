@@ -24,5 +24,5 @@ public interface CoinService {
     void deleteCoin(String coinId);
     Coin updateIsNewStatus(String id, boolean isNew);
     List<Coin> getNewCoins();
-    List<String> getTradingSymbolsByCoinIds(List<String> coinIds);
+    List<String> getTradingSymbols();
 }

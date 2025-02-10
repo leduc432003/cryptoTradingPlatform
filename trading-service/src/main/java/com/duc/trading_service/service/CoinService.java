@@ -15,5 +15,5 @@ public interface CoinService {
     @GetMapping("/api/coins/{coinId}")
     CoinDTO getCoinById(@PathVariable String coinId);
     @GetMapping("/api/coins/get-trading-symbol")
-    List<String> getTradingSymbolsByCoinIds(@RequestParam List<String> coinIds);
+    List<String> getTradingSymbols();
 }

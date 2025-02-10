@@ -1,6 +1,7 @@
 package com.duc.trading_service.service.impl;
 
 import com.duc.trading_service.dto.AssetDTO;
+import com.duc.trading_service.dto.CoinDTO;
 import com.duc.trading_service.dto.WalletDTO;
 import com.duc.trading_service.dto.WalletTransactionType;
 import com.duc.trading_service.dto.request.AddBalanceRequest;
@@ -13,14 +14,12 @@ import com.duc.trading_service.repository.OrderRepository;
 import com.duc.trading_service.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -37,11 +36,13 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Orders createOrder(Long userId, OrderItem orderItem, OrderType orderType) {
-        double price = coinService.getCoinById(orderItem.getCoinId()).getCurrentPrice() * orderItem.getQuantity();
+        CoinDTO coinDTO = coinService.getCoinById(orderItem.getCoinId());
+        double price = coinDTO.getCurrentPrice() * orderItem.getQuantity();
         Orders order = new Orders();
         order.setUserId(userId);
         order.setOrderItem(orderItem);
         order.setOrderType(orderType);
+        order.setTradingSymbol(coinDTO.getTradingSymbol());
 
         if (orderType == OrderType.LIMIT_BUY || orderType == OrderType.LIMIT_SELL) {
             order.setPrice(BigDecimal.valueOf(0));
@@ -82,19 +83,46 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<String> getPendingCoinSymbols() {
-        List<Orders> pendingOrders = orderRepository.findByStatus(OrderStatus.PENDING);
-        if (pendingOrders == null || pendingOrders.isEmpty()) {
-            return List.of();
+    public List<Orders> getOrderByStatusAndTradingSymbol(OrderStatus status, String tradingSymbol) {
+        return orderRepository.findByStatusAndTradingSymbol(status, tradingSymbol);
+    }
+
+    @Override
+    @Transactional
+    public void matchOrdersWithPrice(String symbol, BigDecimal currentPrice) {
+        List<Orders> ordersList = getOrderByStatusAndTradingSymbol(OrderStatus.PENDING, symbol.toLowerCase());
+        System.out.println(ordersList);
+
+        for (Orders order : ordersList) {
+            if (order.getOrderItem() == null || !order.getTradingSymbol().equals(symbol)) {
+                continue;
+            }
+
+            if (order.getOrderType() == OrderType.STOP_LIMIT_BUY && currentPrice.compareTo(order.getStopPrice()) >= 0) {
+                order.setOrderType(OrderType.LIMIT_BUY);
+                orderRepository.save(order);
+            } else if (order.getOrderType() == OrderType.STOP_LIMIT_SELL && currentPrice.compareTo(order.getStopPrice()) <= 0) {
+                order.setOrderType(OrderType.LIMIT_SELL);
+                orderRepository.save(order);
+            }
+
+            if ((order.getOrderType() == OrderType.LIMIT_BUY && currentPrice.compareTo(order.getLimitPrice()) <= 0) ||
+                    (order.getOrderType() == OrderType.LIMIT_SELL && currentPrice.compareTo(order.getLimitPrice()) >= 0)) {
+                System.out.println("mua dc r");
+                try {
+                    if (order.getOrderType() == OrderType.LIMIT_BUY) {
+                        buyAssetForLimitOrder(order, internal1ServiceToken);
+                    } else if (order.getOrderType() == OrderType.LIMIT_SELL) {
+                        sellAssetForLimitOrder(order, internal1ServiceToken);
+                    }
+
+                    order.setStatus(OrderStatus.SUCCESS);
+                    orderRepository.save(order);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
-
-        List<String> coinIds = pendingOrders.stream()
-                .map(order -> order.getOrderItem().getCoinId())
-                .filter(Objects::nonNull)
-                .distinct()
-                .toList();
-
-        return coinService.getTradingSymbolsByCoinIds(coinIds);
     }
 
     @Transactional
@@ -149,42 +177,6 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.PENDING);
         orderItem.setOrder(order);
         return orderRepository.save(order);
-    }
-
-    @Scheduled(fixedRate = 60000)
-    public void matchLimitOrders() {
-        List<Orders> pendingLimitOrders = orderRepository.findByStatus(OrderStatus.PENDING);
-
-        for (Orders order : pendingLimitOrders) {
-            if(order.getOrderItem() == null) {
-                continue;
-            }
-            BigDecimal currentPrice = BigDecimal.valueOf(coinService.getCoinById(order.getOrderItem().getCoinId()).getCurrentPrice());
-            if (order.getOrderType() == OrderType.STOP_LIMIT_BUY && currentPrice.compareTo(order.getStopPrice()) >= 0) {
-                order.setOrderType(OrderType.LIMIT_BUY);
-                orderRepository.save(order);
-            } else if (order.getOrderType() == OrderType.STOP_LIMIT_SELL && currentPrice.compareTo(order.getStopPrice()) <= 0) {
-                order.setOrderType(OrderType.LIMIT_SELL);
-                orderRepository.save(order);
-            }
-
-            if ((order.getOrderType() == OrderType.LIMIT_BUY && currentPrice.compareTo(order.getLimitPrice()) <= 0) ||
-                    (order.getOrderType() == OrderType.LIMIT_SELL && currentPrice.compareTo(order.getLimitPrice()) >= 0)) {
-
-                try {
-                    if (order.getOrderType() == OrderType.LIMIT_BUY) {
-                        buyAssetForLimitOrder(order, internal1ServiceToken);
-                    } else if (order.getOrderType() == OrderType.LIMIT_SELL) {
-                        sellAssetForLimitOrder(order, internal1ServiceToken);
-                    }
-
-                    order.setStatus(OrderStatus.SUCCESS);
-                    orderRepository.save(order);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
     }
 
     @Transactional

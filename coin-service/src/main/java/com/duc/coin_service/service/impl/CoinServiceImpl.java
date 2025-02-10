@@ -510,7 +510,7 @@ public class CoinServiceImpl implements CoinService {
     }
 
     @Override
-    public List<String> getTradingSymbolsByCoinIds(List<String> coinIds) {
-        return coinRepository.findTradingSymbolsByCoinIds(coinIds);
+    public List<String> getTradingSymbols() {
+        return coinRepository.findAllTradingSymbols();
     }
 }

@@ -31,6 +31,7 @@ public class Orders {
 
     @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
     private OrderItem orderItem;
+    private String tradingSymbol;
 
     @Override
     public String toString() {

@@ -123,8 +123,8 @@ public class CoinController {
     }
 
     @GetMapping("/get-trading-symbol")
-    public ResponseEntity<List<String>> getTradingSymbolsByCoinIds(@RequestParam List<String> coinIds) {
-        List<String> tradingSymbols = coinService.getTradingSymbolsByCoinIds(coinIds);
+    public ResponseEntity<List<String>> getTradingSymbols() {
+        List<String> tradingSymbols = coinService.getTradingSymbols();
         return ResponseEntity.ok(tradingSymbols);
     }
 }

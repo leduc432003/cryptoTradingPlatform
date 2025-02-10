@@ -13,6 +13,6 @@ public interface CoinRepository extends JpaRepository<Coin, String> {
     @Query("SELECT c.id FROM Coin c")
     List<String> findAllCoinIds();
     List<Coin> findByIsNewTrue();
-    @Query("SELECT c.tradingSymbol FROM Coin c WHERE c.id IN :coinIds")
-    List<String> findTradingSymbolsByCoinIds(@Param("coinIds") List<String> coinIds);
+    @Query("SELECT c.tradingSymbol FROM Coin c")
+    List<String> findAllTradingSymbols();
 }

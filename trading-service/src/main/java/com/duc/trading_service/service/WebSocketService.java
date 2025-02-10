@@ -1,26 +1,25 @@
 package com.duc.trading_service.service;
 
-import com.duc.trading_service.model.OrderStatus;
-import com.duc.trading_service.model.Orders;
-import com.duc.trading_service.repository.OrderRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import java.util.List;
-import java.util.Objects;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class WebSocketService {
     private CoinPriceWebSocketClient webSocketClient;
+    private final CoinService coinService;
     private final OrderService orderService;
 
     @PostConstruct
     public void startWebSocket() {
         try {
-            List<String> pendingCoins = orderService.getPendingCoinSymbols();
+            Set<String> pendingCoins = new HashSet<>(coinService.getTradingSymbols());
             if (!pendingCoins.isEmpty()) {
-                webSocketClient = new CoinPriceWebSocketClient(pendingCoins);
+                webSocketClient = new CoinPriceWebSocketClient(pendingCoins, orderService);
                 webSocketClient.connect();
             } else {
                 System.out.println("No pending coins to track.");
@@ -36,10 +35,4 @@ public class WebSocketService {
             System.out.println("WebSocket stopped.");
         }
     }
-
-//    public void addNewCoin(String newCoinSymbol) {
-//        if (webSocketClient != null) {
-//            webSocketClient.subscribeNewCoin(newCoinSymbol);
-//        }
-//    }
 }
