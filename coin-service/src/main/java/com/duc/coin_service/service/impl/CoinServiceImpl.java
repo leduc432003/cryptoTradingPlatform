@@ -508,4 +508,9 @@ public class CoinServiceImpl implements CoinService {
     public List<Coin> getNewCoins() {
         return coinRepository.findByIsNewTrue();
     }
+
+    @Override
+    public List<String> getTradingSymbolsByCoinIds(List<String> coinIds) {
+        return coinRepository.findTradingSymbolsByCoinIds(coinIds);
+    }
 }

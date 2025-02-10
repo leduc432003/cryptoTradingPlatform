@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -78,6 +79,22 @@ public class OrderServiceImpl implements OrderService {
             case STOP_LIMIT_SELL -> placeStopLimitOrder(coinId, quantity, userId, stopPrice, limitPrice, OrderType.STOP_LIMIT_SELL, jwt);
             default -> throw new Exception("Invalid order type");
         };
+    }
+
+    @Override
+    public List<String> getPendingCoinSymbols() {
+        List<Orders> pendingOrders = orderRepository.findByStatus(OrderStatus.PENDING);
+        if (pendingOrders == null || pendingOrders.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> coinIds = pendingOrders.stream()
+                .map(order -> order.getOrderItem().getCoinId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        return coinService.getTradingSymbolsByCoinIds(coinIds);
     }
 
     @Transactional

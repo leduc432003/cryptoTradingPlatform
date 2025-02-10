@@ -38,7 +38,7 @@ public class CoinPriceWebSocketClient extends WebSocketClient {
             subscribePayload.put("params", Arrays.asList(
                     coinSymbols.stream().map(coin -> coin.toLowerCase() + "@kline_15m").toArray(String[]::new)
             ));
-            subscribePayload.put("id", 1);
+            subscribePayload.put("id", coinSymbols.size());
 
             String subscribeMessage = objectMapper.writeValueAsString(subscribePayload);
             this.send(subscribeMessage);

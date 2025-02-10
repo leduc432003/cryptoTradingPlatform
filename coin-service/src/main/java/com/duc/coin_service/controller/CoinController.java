@@ -121,4 +121,10 @@ public class CoinController {
         List<Coin> newListing = coinService.getNewCoins();
         return new ResponseEntity<>(newListing, HttpStatus.OK);
     }
+
+    @GetMapping("/get-trading-symbol")
+    public ResponseEntity<List<String>> getTradingSymbolsByCoinIds(@RequestParam List<String> coinIds) {
+        List<String> tradingSymbols = coinService.getTradingSymbolsByCoinIds(coinIds);
+        return ResponseEntity.ok(tradingSymbols);
+    }
 }
