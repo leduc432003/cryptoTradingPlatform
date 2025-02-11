@@ -47,6 +47,12 @@ services:
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
 
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+
 volumes:
   db-data:
     driver: local

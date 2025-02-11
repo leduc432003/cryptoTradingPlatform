@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -29,31 +28,11 @@ public class OrderServiceImpl implements OrderService {
     private final OrderItemService orderItemService;
     private final WalletService walletService;
     private final AssetService assetService;
+    private final OrderRedisService orderRedisService;
     @Value("${internal.service.token}")
     private String internalServiceToken;
     @Value("${internal1.service.token}")
     private String internal1ServiceToken;
-
-    @Override
-    public Orders createOrder(Long userId, OrderItem orderItem, OrderType orderType) {
-        CoinDTO coinDTO = coinService.getCoinById(orderItem.getCoinId());
-        double price = coinDTO.getCurrentPrice() * orderItem.getQuantity();
-        Orders order = new Orders();
-        order.setUserId(userId);
-        order.setOrderItem(orderItem);
-        order.setOrderType(orderType);
-        order.setTradingSymbol(coinDTO.getTradingSymbol());
-
-        if (orderType == OrderType.LIMIT_BUY || orderType == OrderType.LIMIT_SELL) {
-            order.setPrice(BigDecimal.valueOf(0));
-        } else {
-            order.setPrice(BigDecimal.valueOf(price));
-        }
-
-        order.setTimestamp(LocalDateTime.now());
-        order.setStatus(OrderStatus.PENDING);
-        return orderRepository.save(order);
-    }
 
     @Override
     public Orders getOrderById(Long orderId) throws Exception {
@@ -83,18 +62,12 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<Orders> getOrderByStatusAndTradingSymbol(OrderStatus status, String tradingSymbol) {
-        return orderRepository.findByStatusAndTradingSymbol(status, tradingSymbol);
-    }
-
-    @Override
     @Transactional
     public void matchOrdersWithPrice(String symbol, BigDecimal currentPrice) {
-        List<Orders> ordersList = getOrderByStatusAndTradingSymbol(OrderStatus.PENDING, symbol.toLowerCase());
+        List<Orders> ordersList = orderRedisService.getOrderByStatusAndTradingSymbol(OrderStatus.PENDING, symbol.toLowerCase());
         System.out.println(ordersList);
-
         for (Orders order : ordersList) {
-            if (order.getOrderItem() == null || !order.getTradingSymbol().equals(symbol)) {
+            if (order.getOrderItem() == null) {
                 continue;
             }
 
@@ -116,8 +89,7 @@ public class OrderServiceImpl implements OrderService {
                         sellAssetForLimitOrder(order, internal1ServiceToken);
                     }
 
-                    order.setStatus(OrderStatus.SUCCESS);
-                    orderRepository.save(order);
+                    orderRedisService.updateOrderStatus(order, OrderStatus.SUCCESS);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -144,7 +116,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         OrderItem orderItem = orderItemService.createOrderItem(coinId, quantity, stopPrice.doubleValue(), limitPrice.doubleValue());
-        Orders order = createOrder(userId, orderItem, orderType);
+        Orders order = orderRedisService.createOrder(userId, orderItem, orderType);
         order.setStopPrice(stopPrice);
         order.setLimitPrice(limitPrice);
         order.setStatus(OrderStatus.PENDING);
@@ -172,7 +144,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         OrderItem orderItem = orderItemService.createOrderItem(coinId, quantity, 0, 0);
-        Orders order = createOrder(userId, orderItem, orderType);
+        Orders order = orderRedisService.createOrder(userId, orderItem, orderType);
         order.setLimitPrice(limitPrice);
         order.setStatus(OrderStatus.PENDING);
         orderItem.setOrder(order);
@@ -243,7 +215,7 @@ public class OrderServiceImpl implements OrderService {
         }
         double buyPrice = coinService.getCoinById(coinId).getCurrentPrice();
         OrderItem orderItem = orderItemService.createOrderItem(coinId, quantity, buyPrice, 0);
-        Orders order = createOrder(userId, orderItem, OrderType.BUY);
+        Orders order = orderRedisService.createOrder(userId, orderItem, OrderType.BUY);
         orderItem.setOrder(order);
         walletService.payOrderPayment(jwt, order.getId());
         order.setStatus(OrderStatus.SUCCESS);
@@ -275,7 +247,7 @@ public class OrderServiceImpl implements OrderService {
         if(assetToSell != null) {
             double buyPrice = assetToSell.getBuyPrice();
             OrderItem orderItem = orderItemService.createOrderItem(coinId, quantity, buyPrice, sellPrice);
-            Orders order = createOrder(userId, orderItem, OrderType.SELL);
+            Orders order = orderRedisService.createOrder(userId, orderItem, OrderType.SELL);
             orderItem.setOrder(order);
             if(assetToSell.getQuantity() >= quantity) {
                 order.setStatus(OrderStatus.SUCCESS);
