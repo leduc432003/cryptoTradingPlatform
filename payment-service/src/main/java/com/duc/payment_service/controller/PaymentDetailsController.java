@@ -44,7 +44,7 @@ public class PaymentDetailsController {
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> deletePaymentAccount(@RequestHeader("Authorization") String jwt) {
+    public ResponseEntity<Void> deletePaymentAccount(@RequestHeader("Authorization") String jwt) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         paymentDetailsService.deletePaymentAccount(user.getId());
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);

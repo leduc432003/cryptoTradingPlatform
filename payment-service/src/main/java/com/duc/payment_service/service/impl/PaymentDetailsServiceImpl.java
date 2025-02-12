@@ -32,10 +32,12 @@ public class PaymentDetailsServiceImpl implements PaymentDetailsService {
     }
 
     @Override
-    public void deletePaymentAccount(Long userId) {
+    public void deletePaymentAccount(Long userId) throws Exception {
         PaymentDetails paymentAccountExist = getUserPayment(userId);
         if(paymentAccountExist != null) {
             paymentRepository.deleteById(paymentAccountExist.getId());
+        } else {
+            throw new Exception("No payment account found");
         }
     }
 }
