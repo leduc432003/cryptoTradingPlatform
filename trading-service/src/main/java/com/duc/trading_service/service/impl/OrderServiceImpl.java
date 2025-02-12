@@ -72,11 +72,11 @@ public class OrderServiceImpl implements OrderService {
             }
 
             if (order.getOrderType() == OrderType.STOP_LIMIT_BUY && currentPrice.compareTo(order.getStopPrice()) >= 0) {
-                order.setOrderType(OrderType.LIMIT_BUY);
-                orderRepository.save(order);
+                orderRedisService.updateOrderType(order, OrderType.LIMIT_BUY);
+                continue;
             } else if (order.getOrderType() == OrderType.STOP_LIMIT_SELL && currentPrice.compareTo(order.getStopPrice()) <= 0) {
-                order.setOrderType(OrderType.LIMIT_SELL);
-                orderRepository.save(order);
+                orderRedisService.updateOrderType(order, OrderType.LIMIT_SELL);
+                continue;
             }
 
             if ((order.getOrderType() == OrderType.LIMIT_BUY && currentPrice.compareTo(order.getLimitPrice()) <= 0) ||
@@ -218,7 +218,7 @@ public class OrderServiceImpl implements OrderService {
         Orders order = orderRedisService.createOrder(userId, orderItem, OrderType.BUY);
         orderItem.setOrder(order);
         walletService.payOrderPayment(jwt, order.getId());
-        order.setStatus(OrderStatus.SUCCESS);
+        orderRedisService.updateOrderStatus(order, OrderStatus.SUCCESS);
         order.setOrderType(OrderType.BUY);
 
         AssetDTO oldAsset = assetService.getAssetByUserIdAndCoinId(jwt, coinId);
@@ -250,7 +250,7 @@ public class OrderServiceImpl implements OrderService {
             Orders order = orderRedisService.createOrder(userId, orderItem, OrderType.SELL);
             orderItem.setOrder(order);
             if(assetToSell.getQuantity() >= quantity) {
-                order.setStatus(OrderStatus.SUCCESS);
+                orderRedisService.updateOrderStatus(order, OrderStatus.SUCCESS);
                 order.setOrderType(OrderType.SELL);
                 Orders saveOrder = orderRepository.save(order);
                 walletService.payOrderPayment(jwt, order.getId());

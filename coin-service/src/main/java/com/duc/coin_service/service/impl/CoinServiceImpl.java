@@ -1,11 +1,13 @@
 package com.duc.coin_service.service.impl;
 
 import com.duc.coin_service.dto.AssetDTO;
+import com.duc.coin_service.dto.UserDTO;
 import com.duc.coin_service.dto.request.CreateAssetRequest;
 import com.duc.coin_service.model.Coin;
 import com.duc.coin_service.repository.CoinRepository;
 import com.duc.coin_service.service.AssetService;
 import com.duc.coin_service.service.CoinService;
+import com.duc.coin_service.service.UserService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,10 +34,10 @@ public class CoinServiceImpl implements CoinService {
     private final ObjectMapper objectMapper;
     private final CoinRepository coinRepository;
     private final AssetService assetService;
+    private final UserService userService;
     @Value("${internal.service.token}")
     private String internalServiceToken;
     private static final String API_KEY = "CG-HfJNVa7kfaaTEWbWDmjDQnWM";
-    private static final Long ADMIN_ID = 2L;
 
     public Date parseIsoDate(String dateString) {
         try {
@@ -473,10 +475,12 @@ public class CoinServiceImpl implements CoinService {
         coin.setTransactionFee(BigDecimal.valueOf(transactionFee));
         coin.setTradingSymbol(tradingSymbol);
 
-        AssetDTO oldAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coin.getId(), ADMIN_ID);
+        UserDTO admin = userService.getUserByEmail("admin@gmail.com");
+
+        AssetDTO oldAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coin.getId(), admin.getId());
         if (oldAsset == null) {
             CreateAssetRequest assetRequest = new CreateAssetRequest();
-            assetRequest.setUserId(ADMIN_ID);
+            assetRequest.setUserId(admin.getId());
             assetRequest.setCoinId(coinId);
             assetRequest.setQuantity(totalSupply);
             assetService.createAsset(internalServiceToken, assetRequest);

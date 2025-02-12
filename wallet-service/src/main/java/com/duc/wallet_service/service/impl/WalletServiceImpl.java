@@ -96,11 +96,13 @@ public class WalletServiceImpl implements WalletService {
             if(buySellCount == 1) {
                 UserDTO userDTO = userService.getUserById(wallet.getUserId());
                 UserDTO referrer = userService.getUserByReferralCode(userDTO.getReferredBy());
-                Wallet walletReferrer = getWalletByUserId(referrer.getId());
-                BigDecimal newBalance1 = walletReferrer.getBalance().add(BigDecimal.valueOf(3));
-                walletReferrer.setBalance(newBalance1);
-                walletTransactionService.createWalletTransaction(walletReferrer, WalletTransactionType.INTRODUCTORY_GIFT, null, "INTRODUCTORY GIFT", BigDecimal.valueOf(3));
-                walletRepository.save(walletReferrer);
+                if(referrer.getReferralCount() <= 10) {
+                    Wallet walletReferrer = getWalletByUserId(referrer.getId());
+                    BigDecimal newBalance1 = walletReferrer.getBalance().add(BigDecimal.valueOf(3));
+                    walletReferrer.setBalance(newBalance1);
+                    walletTransactionService.createWalletTransaction(walletReferrer, WalletTransactionType.INTRODUCTORY_GIFT, null, "INTRODUCTORY GIFT", BigDecimal.valueOf(3));
+                    walletRepository.save(walletReferrer);
+                }
             }
         } else {
             newBalance = wallet.getBalance().add(order.getPrice());

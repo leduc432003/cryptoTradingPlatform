@@ -15,6 +15,6 @@ UserService {
     public UserDTO getUserProfile(@RequestHeader("Authorization") String jwt);
     @GetMapping("/api/users/{userId}")
     public UserDTO getUserById(@PathVariable Long userId);
-    @GetMapping("/api/users/referral-code/ode{referralCode}")
+    @GetMapping("/api/users/referral-code/{referralCode}")
     public UserDTO getUserByReferralCode(@PathVariable String referralCode);
 }

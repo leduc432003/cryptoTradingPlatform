@@ -125,8 +125,13 @@ public class UserController {
         return new ResponseEntity<>(userService.findUserById(userId), HttpStatus.OK);
     }
 
-    @GetMapping("/referral-code/ode{referralCode}")
+    @GetMapping("/referral-code/{referralCode}")
     public ResponseEntity<User> getUserByReferralCode(@PathVariable String referralCode) throws Exception {
         return new ResponseEntity<>(userService.getUserByReferralCode(referralCode), HttpStatus.OK);
+    }
+
+    @GetMapping("/email/{email}")
+    public ResponseEntity<User> getUserByEmail(@PathVariable String email) throws Exception {
+        return new ResponseEntity<>(userService.findUserByEmail(email), HttpStatus.OK);
     }
 }

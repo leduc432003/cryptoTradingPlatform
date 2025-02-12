@@ -36,6 +36,13 @@ public class OrderRedisServiceImpl implements OrderRedisService {
         orderRepository.save(order);
     }
 
+    @Override
+    @CacheEvict(value = "orders", key = "#order.tradingSymbol")
+    public void updateOrderType(Orders order, OrderType orderType) {
+        order.setOrderType(orderType);
+        orderRepository.save(order);
+    }
+
     @CacheEvict(value = "orders", key = "#result.tradingSymbol")
     @Override
     public Orders createOrder(Long userId, OrderItem orderItem, OrderType orderType) {

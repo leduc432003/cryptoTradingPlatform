@@ -10,5 +10,6 @@ import java.util.List;
 public interface OrderRedisService {
     List<Orders> getOrderByStatusAndTradingSymbol(OrderStatus status, String tradingSymbol);
     void updateOrderStatus(Orders order, OrderStatus newStatus);
+    void updateOrderType(Orders order, OrderType orderType);
     Orders createOrder(Long userId, OrderItem orderItem, OrderType orderType);
 }
