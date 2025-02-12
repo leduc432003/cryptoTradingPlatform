@@ -12,7 +12,11 @@ public class PaymentDetailsServiceImpl implements PaymentDetailsService {
     private final PaymentDetailsRepository paymentRepository;
 
     @Override
-    public PaymentDetails createPayment(PaymentDetails payment) {
+    public PaymentDetails createPayment(PaymentDetails payment) throws Exception {
+        PaymentDetails paymentAccountExist = getUserPayment(payment.getUserId());
+        if(paymentAccountExist != null) {
+            throw new Exception("Payment Account is exist.");
+        }
         PaymentDetails createPayment = PaymentDetails.builder()
                 .accountName(payment.getAccountName())
                 .accountNumber(payment.getAccountNumber())
@@ -25,5 +29,13 @@ public class PaymentDetailsServiceImpl implements PaymentDetailsService {
     @Override
     public PaymentDetails getUserPayment(Long userId) {
         return paymentRepository.findByUserId(userId);
+    }
+
+    @Override
+    public void deletePaymentAccount(Long userId) {
+        PaymentDetails paymentAccountExist = getUserPayment(userId);
+        if(paymentAccountExist != null) {
+            paymentRepository.deleteById(paymentAccountExist.getId());
+        }
     }
 }

@@ -18,7 +18,7 @@ public class PaymentDetailsController {
     private final PaymentDetailsService paymentDetailsService;
 
     @PostMapping
-    public ResponseEntity<PaymentDetails> createPaymentDetails(@RequestHeader("Authorization") String jwt, @RequestBody PaymentDetails request) {
+    public ResponseEntity<PaymentDetails> createPaymentDetails(@RequestHeader("Authorization") String jwt, @RequestBody PaymentDetails request) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         request.setUserId(user.getId());
         PaymentDetails paymentDetails = paymentDetailsService.createPayment(request);
@@ -41,5 +41,12 @@ public class PaymentDetailsController {
 
         PaymentDetails paymentDetails = paymentDetailsService.getUserPayment(id);
         return new ResponseEntity<>(paymentDetails, HttpStatus.CREATED);
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deletePaymentAccount(@RequestHeader("Authorization") String jwt) {
+        UserDTO user = userService.getUserProfile(jwt);
+        paymentDetailsService.deletePaymentAccount(user.getId());
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }
