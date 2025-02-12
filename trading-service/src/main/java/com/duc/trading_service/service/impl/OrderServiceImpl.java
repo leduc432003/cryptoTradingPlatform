@@ -276,7 +276,6 @@ public class OrderServiceImpl implements OrderService {
             throw new Exception("Order cannot be canceled as it is not in PENDING status");
         }
 
-        order.setStatus(OrderStatus.CANCELLED);
-        orderRepository.save(order);
+        orderRedisService.updateOrderStatus(order, OrderStatus.CANCELLED);
     }
 }
