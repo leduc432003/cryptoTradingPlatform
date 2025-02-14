@@ -54,7 +54,8 @@ public class OrderRedisServiceImpl implements OrderRedisService {
         order.setOrderType(orderType);
         order.setTradingSymbol(coinDTO.getTradingSymbol());
 
-        if (orderType == OrderType.LIMIT_BUY || orderType == OrderType.LIMIT_SELL) {
+        if (orderType == OrderType.LIMIT_BUY || orderType == OrderType.LIMIT_SELL
+                || orderType == OrderType.STOP_LIMIT_BUY || orderType == OrderType.STOP_LIMIT_SELL) {
             order.setPrice(BigDecimal.ZERO);
         } else {
             order.setPrice(BigDecimal.valueOf(price));

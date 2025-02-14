@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 @FeignClient(name = "wallet-service", url = "http://localhost:5004")
 public interface WalletService {
     @PutMapping("/api/wallet/order/{orderId}/pay")
-    WalletDTO payOrderPayment(@RequestHeader("Authorization") String jwt, @PathVariable Long orderId);
+    WalletDTO payOrderPayment(@RequestHeader("Authorization") String jwt, @PathVariable Long orderId) throws Exception;
     @PostMapping("/api/wallet")
     WalletDTO addBalance(@RequestHeader("Internal-Service-Token") String internalJwt, @RequestBody AddBalanceRequest request);
     @GetMapping("/api/wallet")

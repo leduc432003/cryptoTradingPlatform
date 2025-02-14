@@ -85,12 +85,12 @@ public class WalletServiceImpl implements WalletService {
     public Wallet payOrderPayment(Long orderId, Long userId, String jwt) throws Exception {
         Wallet wallet = getWalletByUserId(userId);
         OrderDTO order = orderService.getOrderById(jwt, orderId);
-        BigDecimal newBalance;
         if(order.getOrderType().equals(OrderType.BUY)) {
-            newBalance = wallet.getBalance().subtract(order.getPrice());
-            if(newBalance.compareTo(order.getPrice()) < 0) {
+            if (wallet.getBalance().compareTo(order.getPrice()) < 0) {
                 throw new Exception("Not enough money for this transaction");
             }
+            BigDecimal newBalance = wallet.getBalance().subtract(order.getPrice());
+            wallet.setBalance(newBalance);
             walletTransactionService.createWalletTransaction(wallet, WalletTransactionType.BUY_ASSET, null, "BUY ASSET", order.getPrice());
             long buySellCount = walletTransactionService.countBuyAndSellAssetTransactions(wallet.getId());
             if(buySellCount == 1) {
@@ -105,10 +105,10 @@ public class WalletServiceImpl implements WalletService {
                 }
             }
         } else {
-            newBalance = wallet.getBalance().add(order.getPrice());
+            BigDecimal newBalance = wallet.getBalance().add(order.getPrice());
             walletTransactionService.createWalletTransaction(wallet, WalletTransactionType.SELL_ASSET, null, "SELL ASSET", order.getPrice());
+            wallet.setBalance(newBalance);
         }
-        wallet.setBalance(newBalance);
         return walletRepository.save(wallet);
     }
 }
