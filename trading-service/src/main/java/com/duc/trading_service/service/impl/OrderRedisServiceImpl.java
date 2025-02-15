@@ -48,6 +48,7 @@ public class OrderRedisServiceImpl implements OrderRedisService {
     public Orders createOrder(Long userId, OrderItem orderItem, OrderType orderType) {
         CoinDTO coinDTO = coinService.getCoinById(orderItem.getCoinId());
         double price = coinDTO.getCurrentPrice() * orderItem.getQuantity();
+        BigDecimal transactionFee = coinDTO.getTransactionFee().multiply(BigDecimal.valueOf(price));
         Orders order = new Orders();
         order.setUserId(userId);
         order.setOrderItem(orderItem);
@@ -58,7 +59,11 @@ public class OrderRedisServiceImpl implements OrderRedisService {
                 || orderType == OrderType.STOP_LIMIT_BUY || orderType == OrderType.STOP_LIMIT_SELL) {
             order.setPrice(BigDecimal.ZERO);
         } else {
-            order.setPrice(BigDecimal.valueOf(price));
+            if (orderType == OrderType.BUY) {
+                order.setPrice(BigDecimal.valueOf(price).add(transactionFee));
+            } else {
+                order.setPrice(BigDecimal.valueOf(price).subtract(transactionFee));
+            }
         }
 
         order.setTimestamp(LocalDateTime.now());

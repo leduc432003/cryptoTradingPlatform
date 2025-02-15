@@ -101,6 +101,10 @@ public class OrderServiceImpl implements OrderService {
             throw new Exception("Quantity, stop price, and limit price must be greater than 0");
         }
 
+        CoinDTO coinDTO = coinService.getCoinById(coinId);
+        BigDecimal buyPrice = limitPrice.multiply(BigDecimal.valueOf(quantity));
+        BigDecimal transactionFee = buyPrice.multiply(coinDTO.getTransactionFee());
+
         if (orderType == OrderType.STOP_LIMIT_SELL) {
             AssetDTO currentAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coinId, userId);
             if (currentAsset == null || currentAsset.getQuantity() < quantity) {
@@ -121,14 +125,14 @@ public class OrderServiceImpl implements OrderService {
             }
 
             WalletDTO walletDTO = walletService.getUserWallet(jwt);
-            if (walletDTO.getBalance().compareTo(limitPrice.multiply(BigDecimal.valueOf(quantity))) < 0) {
+            if (walletDTO.getBalance().compareTo(buyPrice.add(transactionFee)) < 0) {
                 throw new Exception("Insufficient balance to place order");
             }
 
             assetService.updateAsset(internalServiceToken, adminAsset.getId(), -quantity);
 
             AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
-            addBalanceRequest.setMoney(-limitPrice.doubleValue() * quantity);
+            addBalanceRequest.setMoney(-buyPrice.add(transactionFee).doubleValue());
             addBalanceRequest.setUserId(userId);
             addBalanceRequest.setTransactionType(WalletTransactionType.BUY_ASSET);
             walletService.addBalance(internal1ServiceToken, addBalanceRequest);
@@ -139,7 +143,11 @@ public class OrderServiceImpl implements OrderService {
         order.setStopPrice(stopPrice);
         order.setLimitPrice(limitPrice);
         order.setStatus(OrderStatus.PENDING);
-        order.setPrice(BigDecimal.valueOf(limitPrice.doubleValue() * quantity));
+        if(orderType == OrderType.STOP_LIMIT_BUY) {
+            order.setPrice(buyPrice.add(transactionFee));
+        } else {
+            order.setPrice(buyPrice.subtract(transactionFee));
+        }
         orderItem.setOrder(order);
         return orderRepository.save(order);
     }
@@ -150,6 +158,10 @@ public class OrderServiceImpl implements OrderService {
         if (quantity <= 0 || limitPrice.compareTo(BigDecimal.ZERO) <= 0) {
             throw new Exception("Quantity and limit price must be greater than 0");
         }
+
+        CoinDTO coinDTO = coinService.getCoinById(coinId);
+        BigDecimal buyPrice = limitPrice.multiply(BigDecimal.valueOf(quantity));
+        BigDecimal transactionFee = buyPrice.multiply(coinDTO.getTransactionFee());
 
         if(orderType == OrderType.LIMIT_SELL) {
             AssetDTO currentAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coinId, userId);
@@ -171,14 +183,14 @@ public class OrderServiceImpl implements OrderService {
             }
 
             WalletDTO walletDTO = walletService.getUserWallet(jwt);
-            if(walletDTO.getBalance().compareTo(BigDecimal.valueOf(limitPrice.doubleValue() * quantity)) < 0) {
+            if(walletDTO.getBalance().compareTo(buyPrice.add(transactionFee)) < 0) {
                 throw new Exception("Insufficient balance to buy");
             }
 
             assetService.updateAsset(internalServiceToken, adminAsset.getId(), -quantity);
 
             AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
-            addBalanceRequest.setMoney(-limitPrice.doubleValue() * quantity);
+            addBalanceRequest.setMoney(-buyPrice.add(transactionFee).doubleValue());
             addBalanceRequest.setUserId(userId);
             addBalanceRequest.setTransactionType(WalletTransactionType.BUY_ASSET);
             walletService.addBalance(internal1ServiceToken, addBalanceRequest);
@@ -188,6 +200,11 @@ public class OrderServiceImpl implements OrderService {
         Orders order = orderRedisService.createOrder(userId, orderItem, orderType);
         order.setLimitPrice(limitPrice);
         order.setStatus(OrderStatus.PENDING);
+        if(orderType == OrderType.LIMIT_BUY) {
+            order.setPrice(buyPrice.add(transactionFee));
+        } else {
+            order.setPrice(buyPrice.subtract(transactionFee));
+        }
         orderItem.setOrder(order);
         return orderRepository.save(order);
     }
@@ -203,10 +220,18 @@ public class OrderServiceImpl implements OrderService {
             throw new Exception("Quantity must be greater than 0");
         }
 
+        UserDTO admin = userService.getUserByEmail("admin@gmail.com");
         double buyPrice = limitOrder.getLimitPrice().doubleValue();
         String coinId = limitOrder.getOrderItem().getCoinId();
+        BigDecimal transactionFee = limitOrder.getPrice().subtract(BigDecimal.valueOf(buyPrice * quantity));
 
         limitOrder.setStatus(OrderStatus.SUCCESS);
+
+        AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
+        addBalanceRequest.setUserId(admin.getId());
+        addBalanceRequest.setMoney(transactionFee.doubleValue());
+        addBalanceRequest.setTransactionType(WalletTransactionType.CUSTOMER_BUY_ASSET);
+        walletService.addBalance(internal1ServiceToken, addBalanceRequest);
 
         AssetDTO oldAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, limitOrder.getOrderItem().getCoinId(), limitOrder.getUserId());
         if (oldAsset == null) {
@@ -229,16 +254,23 @@ public class OrderServiceImpl implements OrderService {
         }
 
         BigDecimal sellPrice = limitOrder.getLimitPrice();
+        BigDecimal transactionFee = sellPrice.multiply(BigDecimal.valueOf(limitOrder.getOrderItem().getQuantity())).subtract(limitOrder.getPrice());
 
         AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
         addBalanceRequest.setUserId(limitOrder.getUserId());
-        addBalanceRequest.setMoney(sellPrice.doubleValue() * limitOrder.getOrderItem().getQuantity());
+        addBalanceRequest.setMoney(limitOrder.getPrice().doubleValue());
         addBalanceRequest.setTransactionType(WalletTransactionType.SELL_ASSET);
         walletService.addBalance(jwt, addBalanceRequest);
 
         UserDTO admin = userService.getUserByEmail("admin@gmail.com");
         AssetDTO adminAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, limitOrder.getOrderItem().getCoinId(), admin.getId());
         assetService.updateAsset(internalServiceToken, adminAsset.getId(), limitOrder.getOrderItem().getQuantity());
+
+        AddBalanceRequest addBalanceRequest1 = new AddBalanceRequest();
+        addBalanceRequest1.setUserId(admin.getId());
+        addBalanceRequest1.setMoney(transactionFee.doubleValue());
+        addBalanceRequest1.setTransactionType(WalletTransactionType.CUSTOMER_SELL_ASSET);
+        walletService.addBalance(internal1ServiceToken, addBalanceRequest1);
 
         orderRepository.save(limitOrder);
     }
@@ -257,11 +289,14 @@ public class OrderServiceImpl implements OrderService {
             throw new Exception("You can only buy up to " + maxBuyQuantity + " coins per transaction.");
         }
 
-        double buyPrice = coinService.getCoinById(coinId).getCurrentPrice();
+        CoinDTO coinDTO = coinService.getCoinById(coinId);
+        double buyPrice = coinDTO.getCurrentPrice();
+
         BigDecimal totalPrice = BigDecimal.valueOf(buyPrice).multiply(BigDecimal.valueOf(quantity));
+        BigDecimal transactionFee = coinDTO.getTransactionFee().multiply(totalPrice);
 
         WalletDTO userWallet = walletService.getUserWallet(jwt);
-        if (userWallet.getBalance().compareTo(totalPrice) < 0) {
+        if (userWallet.getBalance().compareTo(totalPrice.add(transactionFee)) < 0) {
             throw new Exception("Not enough money for this transaction.");
         }
 
@@ -286,6 +321,12 @@ public class OrderServiceImpl implements OrderService {
 
         assetService.updateAsset(internalServiceToken, adminAsset.getId(), -quantity);
 
+        AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
+        addBalanceRequest.setUserId(admin.getId());
+        addBalanceRequest.setMoney(transactionFee.doubleValue());
+        addBalanceRequest.setTransactionType(WalletTransactionType.CUSTOMER_BUY_ASSET);
+        walletService.addBalance(internal1ServiceToken, addBalanceRequest);
+
         return orderRepository.save(order);
     }
 
@@ -294,7 +335,9 @@ public class OrderServiceImpl implements OrderService {
         if(quantity <= 0) {
             throw new Exception("quantity must be > 0");
         }
-        double sellPrice = coinService.getCoinById(coinId).getCurrentPrice();
+
+        CoinDTO coinDTO = coinService.getCoinById(coinId);
+        double sellPrice = coinDTO.getCurrentPrice();
         AssetDTO assetToSell = assetService.getAssetByUserIdAndCoinId(jwt, coinId);
 
         if (assetToSell == null) {
@@ -306,6 +349,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         double buyPrice = assetToSell.getBuyPrice();
+        BigDecimal transactionFee = coinDTO.getTransactionFee().multiply(BigDecimal.valueOf(sellPrice * quantity));
         OrderItem orderItem = orderItemService.createOrderItem(coinId, quantity, buyPrice, sellPrice);
         Orders order = orderRedisService.createOrder(userId, orderItem, OrderType.SELL);
         orderItem.setOrder(order);
@@ -323,6 +367,13 @@ public class OrderServiceImpl implements OrderService {
         UserDTO admin = userService.getUserByEmail("admin@gmail.com");
         AssetDTO adminAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coinId, admin.getId());
         assetService.updateAsset(internalServiceToken, adminAsset.getId(), quantity);
+
+        AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
+        addBalanceRequest.setUserId(admin.getId());
+        addBalanceRequest.setMoney(transactionFee.doubleValue());
+        addBalanceRequest.setTransactionType(WalletTransactionType.CUSTOMER_SELL_ASSET);
+        walletService.addBalance(internal1ServiceToken, addBalanceRequest);
+
         return saveOrder;
     }
 
@@ -343,11 +394,11 @@ public class OrderServiceImpl implements OrderService {
             assetService.updateAsset(internalServiceToken, adminAsset.getId(), order.getOrderItem().getQuantity());
 
             AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
-            addBalanceRequest.setMoney(order.getLimitPrice().doubleValue() * order.getOrderItem().getQuantity());
+            addBalanceRequest.setMoney(order.getPrice().doubleValue());
             addBalanceRequest.setUserId(userId);
             addBalanceRequest.setTransactionType(WalletTransactionType.REFUND_BUY_ASSET);
             walletService.addBalance(internal1ServiceToken, addBalanceRequest);
-        } else {
+        } else if((order.getOrderType() == OrderType.LIMIT_SELL) || (order.getOrderType() == OrderType.STOP_LIMIT_SELL)) {
             AssetDTO oldAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, order.getOrderItem().getCoinId(), userId);
 
             assetService.updateAsset(internalServiceToken, oldAsset.getId(), order.getOrderItem().getQuantity());
