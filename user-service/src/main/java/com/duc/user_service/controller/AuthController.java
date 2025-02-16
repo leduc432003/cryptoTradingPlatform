@@ -78,7 +78,7 @@ public class AuthController {
         kafkaTemplate.send(topic.name(), notificationEvent);
 
         ApiResponse response = ApiResponse.builder()
-                .messsage("Registration successful. Please verify your email with the OTP sent.")
+                .message("Registration successful. Please verify your email with the OTP sent.")
                 .build();
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -168,10 +168,12 @@ public class AuthController {
         String otp = OtpUtils.generateOtp();
         UUID uuid = UUID.randomUUID();
         String id = uuid.toString();
-        ForgotPasswordOTP forgotPasswordOTP = forgotPasswordService.findByUser(user.getId());
-        if(forgotPasswordOTP == null) {
-            forgotPasswordOTP = forgotPasswordService.createOTP(user, id, otp, request.getVerificationType(), request.getEmail());
+        ForgotPasswordOTP oldForgotPasswordOTP = forgotPasswordService.findByUser(user.getId());
+        if(oldForgotPasswordOTP != null) {
+            forgotPasswordService.deleteOTP(oldForgotPasswordOTP);
         }
+        ForgotPasswordOTP newforgotPasswordOTP = forgotPasswordService.createOTP(user, id, otp, request.getVerificationType(), request.getEmail());
+
         if(request.getVerificationType().equals(VerificationType.EMAIL)) {
             NotificationEvent notificationEvent = NotificationEvent.builder()
                     .channel("EMAIL")
@@ -181,25 +183,48 @@ public class AuthController {
             kafkaTemplate.send(topic.name(), notificationEvent);
         }
         AuthResponse response = AuthResponse.builder()
-                .session(forgotPasswordOTP.getId())
+                .session(newforgotPasswordOTP.getId())
                 .message("forgot password otp sent successfully.")
                 .build();
         return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
-    @PatchMapping("/reset-password/verify-otp/{otp}")
-    public ResponseEntity<ApiResponse> resetPassword(@RequestParam String id, @RequestBody ResetPasswordRequest request, @PathVariable String otp) throws Exception {
-        ForgotPasswordOTP forgotPasswordOTP = forgotPasswordService.findById(id);
-        boolean isVerified = forgotPasswordOTP.getOtp().equals(otp);
-        if(isVerified) {
-            userService.resetPassword(forgotPasswordOTP.getUser(), request.getPassword());
-            forgotPasswordService.deleteOTP(forgotPasswordOTP);
-            ApiResponse res = ApiResponse.builder()
-                    .messsage("password is updated successfully.")
-                    .build();
-            return new ResponseEntity<>(res, HttpStatus.ACCEPTED);
+    @PostMapping("/reset-password/verify-otp")
+    public ResponseEntity<AuthResponse> verifyResetPasswordOTP(
+            @RequestParam String sessionId,
+            @RequestParam String otp) throws Exception {
+        ForgotPasswordOTP forgotPasswordOTP = forgotPasswordService.findById(sessionId);
+        if (forgotPasswordOTP == null) {
+            throw new Exception("Invalid session ID");
         }
-        throw new Exception("otp is wrong");
+
+        if (!forgotPasswordOTP.getOtp().equals(otp)) {
+            throw new Exception("Invalid OTP");
+        }
+
+        AuthResponse response = AuthResponse.builder()
+                .message("OTP verified successfully. You can now reset your password.")
+                .session(sessionId)
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PatchMapping("/reset-password")
+    public ResponseEntity<ApiResponse> resetPassword(@RequestParam String sessionId,
+                                                     @RequestBody ResetPasswordRequest request) throws Exception {
+        ForgotPasswordOTP forgotPasswordOTP = forgotPasswordService.findById(sessionId);
+        if (forgotPasswordOTP == null) {
+            throw new Exception("Invalid session ID");
+        }
+
+        userService.resetPassword(forgotPasswordOTP.getUser(), request.getPassword());
+
+        forgotPasswordService.deleteOTP(forgotPasswordOTP);
+
+        ApiResponse response = ApiResponse.builder()
+                .message("Password reset successfully.")
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/verify-email")
@@ -220,7 +245,7 @@ public class AuthController {
         twoFactorOTPService.deleteTwoFactorOTP(twoFactorOTP);
 
         ApiResponse response = ApiResponse.builder()
-                .messsage("Email verified successfully. You can now log in.")
+                .message("Email verified successfully. You can now log in.")
                 .build();
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
