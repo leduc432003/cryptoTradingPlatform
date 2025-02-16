@@ -28,4 +28,5 @@ public class User {
     private String referralCode;
     private String referredBy;
     private int referralCount = 0;
+    private boolean isVerified = false;
 }

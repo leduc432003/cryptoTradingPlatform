@@ -55,4 +55,9 @@ public class AdminCoinController {
     public Coin updateIsNewStatus(@RequestHeader("Authorization") String jwt, @PathVariable String coinId, @RequestParam boolean isNew) {
         return coinService.updateIsNewStatus(coinId, isNew);
     }
+
+    @PutMapping("/{coinId}/is-delisted")
+    public Coin updateIsDelistedStatus(@RequestHeader("Authorization") String jwt, @PathVariable String coinId, @RequestParam boolean isDelisted) {
+        return coinService.updateIsDelistedStatus(coinId, isDelisted);
+    }
 }

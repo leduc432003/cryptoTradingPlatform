@@ -83,6 +83,8 @@ public class Coin {
     private BigDecimal transactionFee;
     @JsonProperty("is_new")
     private boolean isNew = false;
+    @JsonProperty("is_delisted")
+    private boolean isDelisted = false;
     @JsonProperty("trading_symbol")
     private String tradingSymbol;
 }

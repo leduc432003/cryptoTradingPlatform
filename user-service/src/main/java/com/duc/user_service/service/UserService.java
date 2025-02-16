@@ -14,6 +14,7 @@ public interface UserService {
     User disableTwoFactorAuthentication(VerificationType verificationType, String sendTo, User user);
     void updatePassword(User user, String oldPassword, String newPassword) throws Exception;
     void resetPassword(User user, String newPassword) throws Exception;
+    void deleteUserById(Long userId);
     User updateUser(Long id, UserUpdateRequest updateUser) throws Exception;
     List<User> getAllUser();
     User getUserByReferralCode(String referralCode) throws Exception;

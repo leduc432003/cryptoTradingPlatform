@@ -120,6 +120,17 @@ public class UserController {
         return new ResponseEntity<>(userService.findUserById(userId), HttpStatus.OK);
     }
 
+    @DeleteMapping("/admin/{userId}")
+    public ResponseEntity<Void> deleteUserById(@RequestHeader("Authorization") String jwt, @PathVariable Long userId) throws Exception {
+        User user = userService.findUserProfileByJwt(jwt);
+        if(user.getRole() != UserRole.ROLE_ADMIN) {
+            throw new Exception("Only admin can delete user");
+        }
+
+        userService.deleteUserById(userId);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
     @GetMapping("/{userId}")
     public ResponseEntity<User> getUserById(@PathVariable Long userId) throws Exception {
         return new ResponseEntity<>(userService.findUserById(userId), HttpStatus.OK);

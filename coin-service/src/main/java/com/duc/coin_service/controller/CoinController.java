@@ -122,6 +122,12 @@ public class CoinController {
         return new ResponseEntity<>(newListing, HttpStatus.OK);
     }
 
+    @GetMapping("/new-delisted")
+    public ResponseEntity<List<Coin>> getDelistedCoins() {
+        List<Coin> newListing = coinService.getDelistedCoins();
+        return new ResponseEntity<>(newListing, HttpStatus.OK);
+    }
+
     @GetMapping("/get-trading-symbol")
     public ResponseEntity<List<String>> getTradingSymbols() {
         List<String> tradingSymbols = coinService.getTradingSymbols();

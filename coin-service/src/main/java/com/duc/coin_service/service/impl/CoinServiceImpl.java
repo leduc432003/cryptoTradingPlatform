@@ -509,6 +509,23 @@ public class CoinServiceImpl implements CoinService {
     }
 
     @Override
+    public Coin updateIsDelistedStatus(String id, boolean isDelisted) {
+        Optional<Coin> coinOptional = coinRepository.findById(id);
+        if (coinOptional.isPresent()) {
+            Coin coin = coinOptional.get();
+            coin.setDelisted(isDelisted);
+            return coinRepository.save(coin);
+        } else {
+            throw new RuntimeException("Coin with ID " + id + " not found");
+        }
+    }
+
+    @Override
+    public List<Coin> getDelistedCoins() {
+        return coinRepository.findByIsDelistedTrue();
+    }
+
+    @Override
     public List<Coin> getNewCoins() {
         return coinRepository.findByIsNewTrue();
     }

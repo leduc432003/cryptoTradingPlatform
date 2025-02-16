@@ -41,7 +41,7 @@ public class AuthController {
     private final NewTopic topic;
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthResponse> register(@RequestBody UserRequest user) throws Exception {
+    public ResponseEntity<ApiResponse> register(@RequestBody UserRequest user) throws Exception {
         User isEmailExist = userRepository.findByEmail(user.getEmail());
         if(isEmailExist != null) {
             throw new Exception("email is already used with another user");
@@ -66,18 +66,21 @@ public class AuthController {
         }
         User saveUser = userRepository.save(newUser);
 
-        Authentication auth = new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword());
-        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        String jwt = JwtService.generateToken(auth);
+        String otp = OtpUtils.generateOtp();
+        TwoFactorOTP twoFactorOTP = twoFactorOTPService.createTwoFactorOTP(saveUser, otp, null);
 
-        AuthResponse authResponse = AuthResponse.builder()
-                .jwt(jwt)
-                .status(true)
-                .message("register success")
+        NotificationEvent notificationEvent = NotificationEvent.builder()
+                .channel("EMAIL")
+                .recipient(saveUser.getEmail())
+                .otp(otp)
                 .build();
+        kafkaTemplate.send(topic.name(), notificationEvent);
 
-        return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
+        ApiResponse response = ApiResponse.builder()
+                .messsage("Registration successful. Please verify your email with the OTP sent.")
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PostMapping("/signin")
@@ -85,13 +88,21 @@ public class AuthController {
         String userName = loginRequest.getEmail();
         String password = loginRequest.getPassword();
 
+        User user = userRepository.findByEmail(loginRequest.getEmail());
+
+        if (user == null) {
+            throw new Exception("Invalid email or password");
+        }
+
+        if (!user.isVerified()) {
+            throw new Exception("Email is not verified. Please check your email.");
+        }
 
         Authentication auth = authenticate(userName, password);
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         String jwt = JwtService.generateToken(auth);
 
-        User user = userRepository.findByEmail(loginRequest.getEmail());
 
         if(user.getTwoFactorAuth().isEnable()) {
             String otp = OtpUtils.generateOtp();
@@ -189,6 +200,29 @@ public class AuthController {
             return new ResponseEntity<>(res, HttpStatus.ACCEPTED);
         }
         throw new Exception("otp is wrong");
+    }
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<ApiResponse> verifyEmail(@RequestParam String email, @RequestParam String otp) throws Exception {
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new Exception("User not found");
+        }
+
+        TwoFactorOTP twoFactorOTP = twoFactorOTPService.findByUser(user.getId());
+        if (twoFactorOTP == null || !twoFactorOTP.getOtp().equals(otp)) {
+            throw new Exception("Invalid OTP");
+        }
+
+        user.setVerified(true);
+        userRepository.save(user);
+
+        twoFactorOTPService.deleteTwoFactorOTP(twoFactorOTP);
+
+        ApiResponse response = ApiResponse.builder()
+                .messsage("Email verified successfully. You can now log in.")
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     private String generateReferralCode(String fullName) {

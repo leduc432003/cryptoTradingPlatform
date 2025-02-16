@@ -87,6 +87,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void deleteUserById(Long userId) {
+        userRepository.deleteById(userId);
+    }
+
+    @Override
     public User updateUser(Long id, UserUpdateRequest updateUser) throws Exception {
         User existingUser = findUserById(id);
         if(updateUser.getFullName() != null) {
