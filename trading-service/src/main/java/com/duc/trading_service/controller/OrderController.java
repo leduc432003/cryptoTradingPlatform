@@ -2,6 +2,7 @@ package com.duc.trading_service.controller;
 
 import com.duc.trading_service.dto.UserDTO;
 import com.duc.trading_service.dto.request.CreateOrderRequest;
+import com.duc.trading_service.model.OrderStatus;
 import com.duc.trading_service.model.Orders;
 import com.duc.trading_service.model.OrderType;
 import com.duc.trading_service.service.OrderService;
@@ -50,6 +51,13 @@ public class OrderController {
     public ResponseEntity<List<Orders>> getAllOrdersForUser(@RequestHeader("Authorization") String jwt, @RequestParam(required = false) OrderType order_type, @RequestParam(required = false) String asset_symbol) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         List<Orders> orderList = orderService.getAllOrdersOfUser(user.getId(), order_type, asset_symbol);
+        return new ResponseEntity<>(orderList, HttpStatus.OK);
+    }
+
+    @GetMapping("/pending")
+    public ResponseEntity<List<Orders>> getAllOrdersForUser(@RequestHeader("Authorization") String jwt) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        List<Orders> orderList = orderService.getOrdersByStatus(user.getId(), OrderStatus.PENDING);
         return new ResponseEntity<>(orderList, HttpStatus.OK);
     }
 

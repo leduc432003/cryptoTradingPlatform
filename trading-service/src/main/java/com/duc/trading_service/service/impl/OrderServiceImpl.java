@@ -95,6 +95,11 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
+    @Override
+    public List<Orders> getOrdersByStatus(Long userId, OrderStatus status) {
+        return orderRepository.findByUserIdAndStatus(userId, status);
+    }
+
     @Transactional
     private Orders placeStopLimitOrder(String coinId, double quantity, Long userId, BigDecimal stopPrice, BigDecimal limitPrice, OrderType orderType, String jwt) throws Exception {
         if (quantity <= 0 || stopPrice.compareTo(BigDecimal.ZERO) <= 0 || limitPrice.compareTo(BigDecimal.ZERO) <= 0) {

@@ -14,4 +14,5 @@ public interface OrderService {
     void cancelLimitOrder(Long orderId, Long userId) throws Exception;
     Orders processOrder(String coinId, double quantity, BigDecimal stopPrice, BigDecimal limitPrice, OrderType orderType, Long userId, String jwt) throws Exception;
     void matchOrdersWithPrice(String symbol, BigDecimal currentPrice);
+    List<Orders> getOrdersByStatus(Long userId, OrderStatus status);
 }
