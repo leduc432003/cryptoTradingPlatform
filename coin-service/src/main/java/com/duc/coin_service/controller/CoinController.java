@@ -19,8 +19,13 @@ public class CoinController {
     private final ObjectMapper objectMapper;
 
     @GetMapping
-    ResponseEntity<List<Coin>> getCoinList(@RequestParam("page") int page) throws Exception {
-        List<Coin> coinList = coinService.getCoinList(page);
+    ResponseEntity<List<Coin>> getCoinList(@RequestParam("page") int page, @RequestParam(required = false, value = "volume") Boolean volume) throws Exception {
+        List<Coin> coinList;
+        if(volume != null) {
+            coinList = coinService.getCoinListVolume(page, volume);
+        } else {
+            coinList = coinService.getCoinList(page);
+        }
         return new ResponseEntity<>(coinList, HttpStatus.OK);
     }
 

@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface CoinService {
     List<Coin> getCoinList(int page) throws Exception;
+    List<Coin> getCoinListVolume(int page, Boolean marketCap) throws Exception;
     String getMarketChart(String coinId, int days) throws Exception;
     String getMarketChartRange(String coinId, long from, long to) throws Exception;
     String getOHLCChar(String coinId, int days) throws Exception;

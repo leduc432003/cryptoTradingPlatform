@@ -74,6 +74,35 @@ public class CoinServiceImpl implements CoinService {
     }
 
     @Override
+    public List<Coin> getCoinListVolume(int page, Boolean volume) throws Exception {
+        List<String> coinList1 = coinRepository.findAllCoinIds();
+        String list = coinList1.toString().replaceAll("[\\[\\]]", "").replaceAll("\\s+", "");
+        String order = "";
+        if(Boolean.TRUE.equals(volume)) {
+            order = "volume_asc";
+        } else {
+            order = "volume_desc";
+        }
+        String url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=50&price_change_percentage=1h%2C7d&page=" + page + "&ids=" + list + "&order=" + order;
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Accept", "application/json")
+                    .header("x-cg-demo-api-key", API_KEY)
+                    .GET()
+                    .build();
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            List<Coin> coinList = objectMapper.readValue(response.body(), new TypeReference<List<Coin>>() {});
+            return coinList;
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    @Override
     public String getMarketChart(String coinId, int days) throws Exception {
         String url = "https://api.coingecko.com/api/v3/coins/" + coinId + "/market_chart?vs_currency=usd&days=" + days;
         try {
