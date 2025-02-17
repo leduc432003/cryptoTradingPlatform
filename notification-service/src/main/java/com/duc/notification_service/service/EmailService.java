@@ -39,4 +39,30 @@ public class EmailService {
             throw new MessagingException("Error configuring email message: " + e.getMessage());
         }
     }
+
+    public void sendUpcomingEventEmail(String email, String eventName, String eventContent) throws MessagingException {
+        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, "utf-8");
+
+        String subject = "Sự kiện sắp diễn ra: " + eventName;
+        String text = "<div style='font-family: Arial, sans-serif; text-align: center;'>" +
+                "<h2 style='color: #333;'>Sự kiện sắp diễn ra!</h2>" +
+                "<h3 style='color: #4CAF50;'>" + eventName + "</h3>" +
+                "<p>" + eventContent + "</p>" +
+                "<p>Hãy theo dõi để không bỏ lỡ nhé!</p>" +
+                "</div>";
+
+        try {
+            mimeMessageHelper.setFrom("leanhduc04032003@gmail.com");
+            mimeMessageHelper.setTo(email);
+            mimeMessageHelper.setSubject(subject);
+            mimeMessageHelper.setText(text, true);
+
+            javaMailSender.send(mimeMessage);
+        } catch (MailException e) {
+            throw new MailSendException("Failed to send email: " + e.getMessage());
+        } catch (MessagingException e) {
+            throw new MessagingException("Error configuring email message: " + e.getMessage());
+        }
+    }
 }

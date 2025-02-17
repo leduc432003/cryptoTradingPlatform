@@ -30,7 +30,21 @@ public class NotificationConsumer {
         } catch (Exception e) {
             throw new Exception(e);
         }
-        emailService.sendVerificationOtpEmail(notificationEvent1.getRecipient(), notificationEvent1.getOtp());
+        emailService.sendVerificationOtpEmail(notificationEvent1.getRecipient(), notificationEvent1.getContent());
+        repository.save(notificationEvent1);
+    }
+
+    @KafkaListener(topics = "notification")
+    public void notification(String notificationEvent) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        NotificationEvent notificationEvent1 = null;
+        System.out.println(notificationEvent);
+        try {
+            notificationEvent1 = objectMapper.readValue(notificationEvent, NotificationEvent.class);
+        } catch (Exception e) {
+            throw new Exception(e);
+        }
+        emailService.sendUpcomingEventEmail(notificationEvent1.getRecipient(), notificationEvent1.getSubject(), notificationEvent1.getContent());
         repository.save(notificationEvent1);
     }
 

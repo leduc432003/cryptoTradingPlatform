@@ -13,7 +13,6 @@ import com.duc.user_service.service.*;
 import com.duc.user_service.utils.OtpUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.RandomStringUtils;
-import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -38,7 +37,6 @@ public class AuthController {
     private final UserService userService;
     private final ForgotPasswordService forgotPasswordService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final NewTopic topic;
 
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse> register(@RequestBody UserRequest user) throws Exception {
@@ -73,9 +71,9 @@ public class AuthController {
         NotificationEvent notificationEvent = NotificationEvent.builder()
                 .channel("EMAIL")
                 .recipient(saveUser.getEmail())
-                .otp(otp)
+                .content(otp)
                 .build();
-        kafkaTemplate.send(topic.name(), notificationEvent);
+        kafkaTemplate.send("send-otp", notificationEvent);
 
         ApiResponse response = ApiResponse.builder()
                 .message("Registration successful. Please verify your email with the OTP sent.")
@@ -116,9 +114,9 @@ public class AuthController {
             NotificationEvent notificationEvent = NotificationEvent.builder()
                     .channel("EMAIL")
                     .recipient(user.getEmail())
-                    .otp(otp)
+                    .content(otp)
                     .build();
-            kafkaTemplate.send(topic.name(), notificationEvent);
+            kafkaTemplate.send("send-otp", notificationEvent);
             AuthResponse res = AuthResponse.builder()
                     .message("Two factor authentication is enable")
                     .isTwoFactorAuthEnabled(true)
@@ -178,9 +176,9 @@ public class AuthController {
             NotificationEvent notificationEvent = NotificationEvent.builder()
                     .channel("EMAIL")
                     .recipient(user.getEmail())
-                    .otp(otp)
+                    .content(otp)
                     .build();
-            kafkaTemplate.send(topic.name(), notificationEvent);
+            kafkaTemplate.send("send-otp", notificationEvent);
         }
         AuthResponse response = AuthResponse.builder()
                 .session(newforgotPasswordOTP.getId())

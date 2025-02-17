@@ -1,12 +1,11 @@
 package com.duc.user_service.controller;
 
 import com.duc.user_service.dto.request.ChangePasswordRequest;
+import com.duc.user_service.dto.request.NotificationRequest;
 import com.duc.user_service.dto.request.UserUpdateRequest;
+import com.duc.user_service.dto.response.ApiResponse;
 import com.duc.user_service.kafka.NotificationEvent;
-import com.duc.user_service.model.User;
-import com.duc.user_service.model.UserRole;
-import com.duc.user_service.model.VerificationCode;
-import com.duc.user_service.model.VerificationType;
+import com.duc.user_service.model.*;
 import com.duc.user_service.service.UserService;
 import com.duc.user_service.service.VerificationCodeService;
 import lombok.RequiredArgsConstructor;
@@ -74,7 +73,7 @@ public class UserController {
             NotificationEvent notificationEvent = NotificationEvent.builder()
                     .channel("EMAIL")
                     .recipient(user.getEmail())
-                    .otp(verificationCode.getOtp())
+                    .content(verificationCode.getOtp())
                     .build();
             kafkaTemplate.send(topic.name(), notificationEvent);
         }
@@ -139,6 +138,32 @@ public class UserController {
     @GetMapping("/referral-code/{referralCode}")
     public ResponseEntity<User> getUserByReferralCode(@PathVariable String referralCode) throws Exception {
         return new ResponseEntity<>(userService.getUserByReferralCode(referralCode), HttpStatus.OK);
+    }
+
+    @PostMapping("/admin/send-notification")
+    public ResponseEntity<ApiResponse> sendNotification(@RequestHeader("Authorization") String jwt, @RequestBody NotificationRequest request) throws Exception {
+        User user = userService.findUserProfileByJwt(jwt);
+        if(user.getRole() != UserRole.ROLE_ADMIN) {
+            throw new Exception("Only admin can watch user list");
+        }
+
+        List<User> users = userService.getAllUser();
+        for(User user1 : users) {
+            if(user1.getRole() != UserRole.ROLE_ADMIN) {
+                NotificationEvent notificationEvent = NotificationEvent.builder()
+                        .channel("EMAIL")
+                        .recipient(user1.getEmail())
+                        .subject(request.getEventName())
+                        .content(request.getText())
+                        .build();
+                kafkaTemplate.send("notification", notificationEvent);
+            }
+        }
+
+        ApiResponse response = ApiResponse.builder()
+                .message("Send successfully")
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/email/{email}")

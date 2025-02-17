@@ -13,7 +13,7 @@ import java.util.Map;
 public class NotificationEvent {
     private String channel;
     private String recipient;
-    private String templateCode;
+    private String subject;
     private Map<String, Object> param;
-    private String otp;
+    private String content;
 }
