@@ -251,6 +251,6 @@ public class AuthController {
     }
 
     private String generateReferralCode(String fullName) {
-        return fullName.substring(0, 3).toUpperCase() + RandomStringUtils.randomNumeric(4);
+        return fullName.replace(" ", "").toUpperCase() + RandomStringUtils.randomNumeric(4);
     }
 }

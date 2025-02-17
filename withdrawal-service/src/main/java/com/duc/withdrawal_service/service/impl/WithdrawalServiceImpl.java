@@ -49,6 +49,9 @@ public class WithdrawalServiceImpl implements WithdrawalService {
         if(withdrawal.isEmpty()) {
             throw new Exception("Withdrawal not found");
         }
+        if(withdrawal.get().getStatus() != WithdrawalStatus.PENDING) {
+            throw new Exception("Withdrawal is not pending");
+        }
         Withdrawal approveWithdrawal = withdrawal.get();
         approveWithdrawal.setDateTime(LocalDateTime.now());
         if(accept) {

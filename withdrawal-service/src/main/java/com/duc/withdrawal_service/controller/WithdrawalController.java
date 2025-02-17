@@ -27,8 +27,8 @@ public class WithdrawalController {
     @Value("${internal.service.token}")
     private String internalServiceToken;
 
-    @PostMapping("/{amount}")
-    public ResponseEntity<Withdrawal> withdrawalRequest(@RequestHeader("Authorization") String jwt, @PathVariable Long amount) throws Exception {
+    @PostMapping
+    public ResponseEntity<Withdrawal> withdrawalRequest(@RequestHeader("Authorization") String jwt, @RequestParam Long amount) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         Withdrawal withdrawal = withdrawalService.requestWithdrawal(jwt, amount, user.getId());
         AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
@@ -39,8 +39,8 @@ public class WithdrawalController {
         return new ResponseEntity<>(withdrawal, HttpStatus.OK);
     }
 
-    @PatchMapping("/{id}/proceed/{accept}")
-    public ResponseEntity<Withdrawal> proceedWithdrawal(@RequestHeader("Authorization") String jwt, @PathVariable Long id, @PathVariable boolean accept) throws Exception {
+    @PatchMapping("/{id}/proceed")
+    public ResponseEntity<Withdrawal> proceedWithdrawal(@RequestHeader("Authorization") String jwt, @PathVariable Long id, @RequestParam boolean accept) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         if(!user.getRole().equals(UserRole.ROLE_ADMIN)) {
             throw new Exception("Only admin can proceed withdrawal");
