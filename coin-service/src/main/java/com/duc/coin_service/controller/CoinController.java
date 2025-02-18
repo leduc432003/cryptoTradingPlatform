@@ -29,6 +29,12 @@ public class CoinController {
         return new ResponseEntity<>(coinList, HttpStatus.OK);
     }
 
+    @GetMapping("/coinIds")
+    ResponseEntity<List<Coin>> getCoinListByCoinIds(@RequestParam List<String> coinIds) throws Exception {
+        List<Coin> coinList = coinService.getCoinListByListCoinId(coinIds);
+        return new ResponseEntity<>(coinList, HttpStatus.OK);
+    }
+
     @GetMapping("/{coinId}/chart")
     ResponseEntity<JsonNode> getCoinHistoricalChartData(@PathVariable String coinId, @RequestParam("days") int days) throws Exception {
         String coin = coinService.getMarketChart(coinId, days);

@@ -19,10 +19,10 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(value = RuntimeException.class)
-    public ResponseEntity<ErrorResponse> handleException(RuntimeException ex) {
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setMessage(ex.getMessage());
-        errorResponse.setErrorCode("1001");
+        errorResponse.setErrorCode("1000");
         errorResponse.setTime(new Date());
         return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
     }

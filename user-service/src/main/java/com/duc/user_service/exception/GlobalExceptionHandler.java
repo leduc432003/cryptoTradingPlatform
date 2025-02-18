@@ -21,7 +21,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(value = java.lang.RuntimeException.class)
-    public ResponseEntity<ErrorResponse> handleRuntimeException(java.lang.Exception ex) {
+    public ResponseEntity<ErrorResponse> handleRuntimeException(java.lang.RuntimeException ex) {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setMessage(ex.getMessage());
         errorResponse.setErrorCode("1000");

@@ -1,9 +1,12 @@
 package com.duc.asset_service.controller;
 
+import com.duc.asset_service.dto.CoinDTO;
 import com.duc.asset_service.dto.UserDTO;
 import com.duc.asset_service.dto.request.CreateAssetRequest;
+import com.duc.asset_service.dto.response.AssetResponse;
 import com.duc.asset_service.model.Asset;
 import com.duc.asset_service.service.AssetService;
+import com.duc.asset_service.service.CoinService;
 import com.duc.asset_service.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,7 +14,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -19,6 +25,7 @@ import java.util.List;
 public class AssetController {
     private final AssetService assetService;
     private final UserService userService;
+    private final CoinService coinService;
     @Value("${internal.service.token}")
     private String internalServiceToken;
 
@@ -70,10 +77,27 @@ public class AssetController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Asset>> getAssetsForUser(@RequestHeader("Authorization") String jwt) throws Exception {
+    public ResponseEntity<List<AssetResponse>> getAssetsForUser(@RequestHeader("Authorization") String jwt) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         List<Asset> assets = assetService.getAssetsByUserId(user.getId());
-        return new ResponseEntity<>(assets, HttpStatus.OK);
+
+        List<String> coinIds = assets.stream()
+                .map(Asset::getCoinId)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<String, CoinDTO> coinMap = coinService.getCoinListByCoinIds(coinIds).stream()
+                .collect(Collectors.toMap(CoinDTO::getId, coin -> coin));
+
+        List<AssetResponse> responseList = assets.stream()
+                .map(asset -> AssetResponse.builder()
+                        .id(asset.getId())
+                        .userId(asset.getUserId())
+                        .quantity(asset.getQuantity())
+                        .buyPrice(asset.getBuyPrice())
+                        .coinDTO(coinMap.get(asset.getCoinId()))
+                        .build())
+                .collect(Collectors.toList());
+        return new ResponseEntity<>(responseList, HttpStatus.OK);
     }
 
     @PostMapping("/exchange")

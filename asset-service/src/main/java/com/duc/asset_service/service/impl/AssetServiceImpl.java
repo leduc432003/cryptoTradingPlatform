@@ -62,20 +62,24 @@ public class AssetServiceImpl implements AssetService {
 
     @Override
     public Asset exchangeAsset(Long userId, String fromCoinId, String toCoinId, double amount) throws Exception {
-        Asset fromAsset = findAssetByUserIdAndCoinId(userId, fromCoinId);
-        if (fromAsset == null || fromAsset.getQuantity() < amount) {
-            throw new Exception("Not enough balance in " + fromCoinId);
-        }
         CoinDTO fromCoin = coinService.getCoinById(fromCoinId);
         CoinDTO toCoin = coinService.getCoinById(toCoinId);
         if (fromCoin == null || toCoin == null) {
             throw new Exception("Invalid coin ID(s) provided");
         }
+        Asset fromAsset = findAssetByUserIdAndCoinId(userId, fromCoinId);
+        if (fromAsset == null || fromAsset.getQuantity() < amount) {
+            throw new Exception("Not enough balance in " + fromCoinId);
+        }
         double fromCoinPrice = fromCoin.getCurrentPrice();
         double toCoinPrice = toCoin.getCurrentPrice();
         double convertedQuantity = (amount * fromCoinPrice) / toCoinPrice;
         fromAsset.setQuantity(fromAsset.getQuantity() - amount);
-        assetRepository.save(fromAsset);
+        if (fromAsset.getQuantity() <= 0) {
+            assetRepository.delete(fromAsset);
+        } else {
+            assetRepository.save(fromAsset);
+        }
         Asset toAsset = findAssetByUserIdAndCoinId(userId, toCoinId);
         if (toAsset == null) {
             toAsset = Asset.builder()

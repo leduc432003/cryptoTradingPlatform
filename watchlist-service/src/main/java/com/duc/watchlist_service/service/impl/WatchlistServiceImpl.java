@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -18,30 +19,37 @@ public class WatchlistServiceImpl implements WatchlistService {
     private final CoinService coinService;
 
     @Override
-    public Watchlist createWatchlist(Long userId, String name) {
-        if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("Watchlist name is required.");
+    public Watchlist findUserWatchList(Long userId) throws Exception {
+        Watchlist watchlist = watchlistRepository.findByUserId(userId);
+        if(watchlist == null) {
+            createWatchList(userId);
+        }
+        return watchlist;
+    }
+
+    @Override
+    public Watchlist createWatchList(Long userId) throws Exception {
+        Watchlist watchlistExist = watchlistRepository.findByUserId(userId);
+        if(watchlistExist != null) {
+            throw new Exception("Watchlist is exist");
         }
         Watchlist watchlist = new Watchlist();
         watchlist.setUserId(userId);
-        watchlist.setName(name);
         return watchlistRepository.save(watchlist);
     }
 
     @Override
-    public List<Watchlist> findAllUserWatchlists(Long userId) {
-        return watchlistRepository.findByUserId(userId);
-    }
-
-    @Override
     public Watchlist findById(Long id) throws Exception {
-        return watchlistRepository.findById(id)
-                .orElseThrow(() -> new Exception("Watchlist not found."));
+        Optional<Watchlist> watchlistOptional = watchlistRepository.findById(id);
+        if(watchlistOptional.isEmpty()) {
+            throw new Exception("Watchlist not found");
+        }
+        return watchlistOptional.get();
     }
 
     @Override
-    public Watchlist addItemToWatchList(String coinId, Long watchlistId) throws Exception {
-        Watchlist watchlist = findById(watchlistId);
+    public Watchlist addItemToWatchList(String coinId, Long userId) throws Exception {
+        Watchlist watchlist = findUserWatchList(userId);
         CoinDTO coinDTO = coinService.getCoinById(coinId);
         if(coinDTO == null) {
             throw new Exception("Coin not found");
@@ -51,18 +59,13 @@ public class WatchlistServiceImpl implements WatchlistService {
     }
 
     @Override
-    public void deleteItemToWatchlist(String coinId, Long watchlistId) throws Exception {
-        Watchlist watchlist = findById(watchlistId);
+    public void deleteItemFromWatchList(String coinId, Long userId) throws Exception {
+        Watchlist watchlist = findUserWatchList(userId);
         CoinDTO coinDTO = coinService.getCoinById(coinId);
         if(coinDTO == null) {
             throw new Exception("Coin not found");
         }
         watchlist.getCoinIds().remove(coinId);
         watchlistRepository.save(watchlist);
-    }
-
-    @Override
-    public void deleteWatchlist(Long watchlistId) {
-        watchlistRepository.deleteById(watchlistId);
     }
 }
