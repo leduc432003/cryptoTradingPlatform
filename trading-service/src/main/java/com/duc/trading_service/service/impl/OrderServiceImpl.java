@@ -112,7 +112,7 @@ public class OrderServiceImpl implements OrderService {
         OrderItem orderItem = null;
         if (orderType == OrderType.STOP_LIMIT_SELL) {
             AssetDTO currentAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coinId, userId);
-            if (currentAsset == null || currentAsset.getQuantity() < quantity) {
+            if (currentAsset == null || BigDecimal.valueOf(currentAsset.getQuantity()).compareTo(BigDecimal.valueOf(quantity)) < 0) {
                 throw new Exception("Insufficient assets to sell");
             }
             AssetDTO updatedAsset = assetService.updateAsset(internalServiceToken, currentAsset.getId(), -quantity);
@@ -170,7 +170,7 @@ public class OrderServiceImpl implements OrderService {
         OrderItem orderItem = null;
         if(orderType == OrderType.LIMIT_SELL) {
             AssetDTO currentAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coinId, userId);
-            if (currentAsset == null || currentAsset.getQuantity() < quantity) {
+            if (currentAsset == null || BigDecimal.valueOf(currentAsset.getQuantity()).compareTo(BigDecimal.valueOf(quantity)) < 0) {
                 throw new Exception("Insufficient assets to sell");
             }
             AssetDTO updatedAsset = assetService.updateAsset(internalServiceToken, currentAsset.getId(), -quantity);
