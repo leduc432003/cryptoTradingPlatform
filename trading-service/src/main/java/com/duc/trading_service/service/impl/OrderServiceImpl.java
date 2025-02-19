@@ -109,7 +109,7 @@ public class OrderServiceImpl implements OrderService {
         CoinDTO coinDTO = coinService.getCoinById(coinId);
         BigDecimal buyPrice = limitPrice.multiply(BigDecimal.valueOf(quantity));
         BigDecimal transactionFee = buyPrice.multiply(coinDTO.getTransactionFee());
-
+        OrderItem orderItem = null;
         if (orderType == OrderType.STOP_LIMIT_SELL) {
             AssetDTO currentAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coinId, userId);
             if (currentAsset == null || currentAsset.getQuantity() < quantity) {
@@ -119,6 +119,7 @@ public class OrderServiceImpl implements OrderService {
             if (updatedAsset.getQuantity() <= 0) {
                 assetService.deleteAsset(internalServiceToken, updatedAsset.getId());
             }
+            orderItem = orderItemService.createOrderItem(coinId, quantity, updatedAsset.getBuyPrice(), limitPrice.doubleValue());
         } else if (orderType == OrderType.STOP_LIMIT_BUY) {
             UserDTO admin = userService.getUserByEmail("admin@gmail.com");
             AssetDTO adminAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coinId, admin.getId());
@@ -140,9 +141,9 @@ public class OrderServiceImpl implements OrderService {
             addBalanceRequest.setUserId(userId);
             addBalanceRequest.setTransactionType(WalletTransactionType.BUY_ASSET);
             walletService.addBalance(internal1ServiceToken, addBalanceRequest);
+            orderItem = orderItemService.createOrderItem(coinId, quantity, limitPrice.doubleValue(), 0);
         }
 
-        OrderItem orderItem = orderItemService.createOrderItem(coinId, quantity, stopPrice.doubleValue(), limitPrice.doubleValue());
         Orders order = orderRedisService.createOrder(userId, orderItem, orderType);
         order.setStopPrice(stopPrice);
         order.setLimitPrice(limitPrice);
