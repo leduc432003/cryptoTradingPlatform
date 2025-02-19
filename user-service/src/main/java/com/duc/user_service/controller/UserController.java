@@ -1,18 +1,22 @@
 package com.duc.user_service.controller;
 
+import com.duc.user_service.dto.request.AdminCreateUserRequest;
 import com.duc.user_service.dto.request.ChangePasswordRequest;
 import com.duc.user_service.dto.request.NotificationRequest;
 import com.duc.user_service.dto.request.UserUpdateRequest;
 import com.duc.user_service.dto.response.ApiResponse;
 import com.duc.user_service.kafka.NotificationEvent;
 import com.duc.user_service.model.*;
+import com.duc.user_service.repository.UserRepository;
 import com.duc.user_service.service.UserService;
 import com.duc.user_service.service.VerificationCodeService;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +26,8 @@ import java.util.List;
 @RequestMapping("/api/users")
 public class UserController {
     private final UserService userService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
     private final VerificationCodeService verificationCodeService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final NewTopic topic;
@@ -81,7 +87,7 @@ public class UserController {
         return new ResponseEntity<>("verification otp sent successfully.",HttpStatus.OK);
     }
 
-    @PostMapping("/change-password")
+    @PutMapping("/change-password")
     public ResponseEntity<String> changePassword(@RequestHeader("Authorization") String jwt, @RequestBody ChangePasswordRequest request) throws Exception {
         User user = userService.findUserProfileByJwt(jwt);
 
@@ -140,6 +146,41 @@ public class UserController {
         return new ResponseEntity<>(userService.getUserByReferralCode(referralCode), HttpStatus.OK);
     }
 
+    @PostMapping("/admin")
+    public ResponseEntity<User> createUser(@RequestHeader("Authorization") String jwt, @RequestBody AdminCreateUserRequest request) throws Exception {
+        User user = userService.findUserProfileByJwt(jwt);
+        if(user.getRole() != UserRole.ROLE_ADMIN) {
+            throw new Exception("Only admin can add user");
+        }
+        User isEmailExist = userRepository.findByEmail(request.getEmail());
+        if(isEmailExist != null) {
+            throw new Exception("email is already used with another user");
+        }
+
+        String referralCode = generateUniqueReferralCode(request.getFullName());
+        User newUser = new User();
+        newUser.setEmail(request.getEmail());
+        newUser.setPassword(passwordEncoder.encode(request.getPassword()));
+        newUser.setMobile(request.getMobile());
+        newUser.setAvatar("https://robohash.org/" + request.getFullName() + "?size=200x200");
+        newUser.setFullName(request.getFullName());
+        newUser.setReferralCode(referralCode);
+        newUser.setVerified(true);
+        newUser.setRole(request.getRole());
+        User saveUser = userRepository.save(newUser);
+        return new ResponseEntity<>(saveUser, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/admin/{userId}")
+    public ResponseEntity<User> adminUpdateUser(@RequestHeader("Authorization") String jwt, @PathVariable Long userId, @RequestBody AdminCreateUserRequest request) throws Exception {
+        User user = userService.findUserProfileByJwt(jwt);
+        if(user.getRole() != UserRole.ROLE_ADMIN) {
+            throw new Exception("Only admin can update user");
+        }
+        User updateUser = userService.adminUpdateUser(userId, request);
+        return new ResponseEntity<>(updateUser, HttpStatus.CREATED);
+    }
+
     @PostMapping("/admin/send-notification")
     public ResponseEntity<ApiResponse> sendNotification(@RequestHeader("Authorization") String jwt, @RequestBody NotificationRequest request) throws Exception {
         User user = userService.findUserProfileByJwt(jwt);
@@ -169,5 +210,20 @@ public class UserController {
     @GetMapping("/email/{email}")
     public ResponseEntity<User> getUserByEmail(@PathVariable String email) throws Exception {
         return new ResponseEntity<>(userService.findUserByEmail(email), HttpStatus.OK);
+    }
+
+    private String generateReferralCode(String fullName) {
+        return fullName.replace(" ", "").toUpperCase() + RandomStringUtils.randomNumeric(4);
+    }
+
+    private String generateUniqueReferralCode(String fullName) {
+        int maxAttempts = 5;
+        for (int i = 0; i < maxAttempts; i++) {
+            String referralCode = generateReferralCode(fullName);
+            if (!userRepository.existsByReferralCode(referralCode)) {
+                return referralCode;
+            }
+        }
+        throw new RuntimeException("Failed to generate a unique referral code after " + maxAttempts + " attempts");
     }
 }

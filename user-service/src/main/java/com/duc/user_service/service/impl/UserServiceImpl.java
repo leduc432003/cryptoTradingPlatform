@@ -1,5 +1,6 @@
 package com.duc.user_service.service.impl;
 
+import com.duc.user_service.dto.request.AdminCreateUserRequest;
 import com.duc.user_service.dto.request.UserUpdateRequest;
 import com.duc.user_service.model.TwoFactorAuth;
 import com.duc.user_service.model.TwoFactorOTP;
@@ -92,7 +93,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public void deleteUserById(Long userId) {
         TwoFactorOTP twoFactorOTP = twoFactorOTPService.findByUser(userId);
-        twoFactorOTPService.deleteTwoFactorOTP(twoFactorOTP);
+        if(twoFactorOTP != null) {
+            twoFactorOTPService.deleteTwoFactorOTP(twoFactorOTP);
+        }
         userRepository.deleteById(userId);
     }
 
@@ -122,5 +125,21 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
-
+    @Override
+    public User adminUpdateUser(Long userId, AdminCreateUserRequest request) throws Exception {
+        User existingUser = findUserById(userId);
+        if(request.getFullName() != null) {
+            existingUser.setFullName(request.getFullName());
+        }
+        if(request.getMobile() != null) {
+            existingUser.setMobile(request.getMobile());
+        }
+        if(request.getRole() != null) {
+            existingUser.setRole(request.getRole());
+        }
+        if(request.getPassword() != null) {
+            existingUser.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+        return userRepository.save(existingUser);
+    }
 }

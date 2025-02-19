@@ -1,5 +1,6 @@
 package com.duc.user_service.service;
 
+import com.duc.user_service.dto.request.AdminCreateUserRequest;
 import com.duc.user_service.dto.request.UserUpdateRequest;
 import com.duc.user_service.model.User;
 import com.duc.user_service.model.VerificationType;
@@ -18,4 +19,5 @@ public interface UserService {
     User updateUser(Long id, UserUpdateRequest updateUser) throws Exception;
     List<User> getAllUser();
     User getUserByReferralCode(String referralCode) throws Exception;
+    User adminUpdateUser(Long userId, AdminCreateUserRequest request) throws Exception;
 }

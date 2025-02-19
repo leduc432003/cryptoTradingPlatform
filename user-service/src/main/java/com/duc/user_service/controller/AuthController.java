@@ -44,7 +44,7 @@ public class AuthController {
         if(isEmailExist != null) {
             throw new Exception("email is already used with another user");
         }
-        String referralCode = generateReferralCode(user.getFullName());
+        String referralCode = generateUniqueReferralCode(user.getFullName());
         User newUser = new User();
         newUser.setEmail(user.getEmail());
         newUser.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -250,5 +250,16 @@ public class AuthController {
 
     private String generateReferralCode(String fullName) {
         return fullName.replace(" ", "").toUpperCase() + RandomStringUtils.randomNumeric(4);
+    }
+
+    private String generateUniqueReferralCode(String fullName) {
+        int maxAttempts = 5;
+        for (int i = 0; i < maxAttempts; i++) {
+            String referralCode = generateReferralCode(fullName);
+            if (!userRepository.existsByReferralCode(referralCode)) {
+                return referralCode;
+            }
+        }
+        throw new RuntimeException("Failed to generate a unique referral code after " + maxAttempts + " attempts");
     }
 }
