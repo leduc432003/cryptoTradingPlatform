@@ -115,8 +115,7 @@ public class OrderServiceImpl implements OrderService {
             if (currentAsset == null || currentAsset.getQuantity() < quantity) {
                 throw new Exception("Insufficient assets to sell");
             }
-            AssetDTO oldAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coinId, userId);
-            AssetDTO updatedAsset = assetService.updateAsset(internalServiceToken, oldAsset.getId(), -quantity);
+            AssetDTO updatedAsset = assetService.updateAsset(internalServiceToken, currentAsset.getId(), -quantity);
             if (updatedAsset.getQuantity() <= 0) {
                 assetService.deleteAsset(internalServiceToken, updatedAsset.getId());
             }
@@ -167,17 +166,17 @@ public class OrderServiceImpl implements OrderService {
         CoinDTO coinDTO = coinService.getCoinById(coinId);
         BigDecimal buyPrice = limitPrice.multiply(BigDecimal.valueOf(quantity));
         BigDecimal transactionFee = buyPrice.multiply(coinDTO.getTransactionFee());
-
+        OrderItem orderItem = null;
         if(orderType == OrderType.LIMIT_SELL) {
             AssetDTO currentAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coinId, userId);
             if (currentAsset == null || currentAsset.getQuantity() < quantity) {
                 throw new Exception("Insufficient assets to sell");
             }
-            AssetDTO oldAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coinId, userId);
-            AssetDTO updatedAsset = assetService.updateAsset(internalServiceToken, oldAsset.getId(), -quantity);
+            AssetDTO updatedAsset = assetService.updateAsset(internalServiceToken, currentAsset.getId(), -quantity);
             if (updatedAsset.getQuantity() <= 0) {
                 assetService.deleteAsset(internalServiceToken, updatedAsset.getId());
             }
+            orderItem = orderItemService.createOrderItem(coinId, quantity, updatedAsset.getBuyPrice(), limitPrice.doubleValue());
         } else if (orderType == OrderType.LIMIT_BUY) {
             UserDTO admin = userService.getUserByEmail("admin@gmail.com");
             AssetDTO adminAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coinId, admin.getId());
@@ -199,9 +198,8 @@ public class OrderServiceImpl implements OrderService {
             addBalanceRequest.setUserId(userId);
             addBalanceRequest.setTransactionType(WalletTransactionType.BUY_ASSET);
             walletService.addBalance(internal1ServiceToken, addBalanceRequest);
+            orderItem = orderItemService.createOrderItem(coinId, quantity, limitPrice.doubleValue(), 0);
         }
-
-        OrderItem orderItem = orderItemService.createOrderItem(coinId, quantity, 0, 0);
         Orders order = orderRedisService.createOrder(userId, orderItem, orderType);
         order.setLimitPrice(limitPrice);
         order.setStatus(OrderStatus.PENDING);
@@ -406,7 +404,15 @@ public class OrderServiceImpl implements OrderService {
         } else if((order.getOrderType() == OrderType.LIMIT_SELL) || (order.getOrderType() == OrderType.STOP_LIMIT_SELL)) {
             AssetDTO oldAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, order.getOrderItem().getCoinId(), userId);
 
-            assetService.updateAsset(internalServiceToken, oldAsset.getId(), order.getOrderItem().getQuantity());
+            if(oldAsset == null) {
+                CreateAssetRequest request = new CreateAssetRequest();
+                request.setUserId(userId);
+                request.setCoinId(order.getOrderItem().getCoinId());
+                request.setQuantity(order.getOrderItem().getQuantity());
+                assetService.createAsset(internalServiceToken, request);
+            } else {
+                assetService.updateAsset(internalServiceToken, oldAsset.getId(), order.getOrderItem().getQuantity());
+            }
         }
 
         orderRedisService.updateOrderStatus(order, OrderStatus.CANCELLED);

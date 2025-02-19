@@ -24,17 +24,12 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<?> payOrderPayment(@RequestHeader("Authorization") String jwt, @RequestBody CreateOrderRequest request) throws Exception {
-        try {
-            UserDTO user = userService.getUserProfile(jwt);
+        UserDTO user = userService.getUserProfile(jwt);
 
-            Orders order = orderService.processOrder(request.getCoinId(), request.getQuantity(), BigDecimal.valueOf(request.getStopPrice()),
-                    BigDecimal.valueOf(request.getLimitPrice()), request.getOrderType(),
-                    user.getId(), jwt);
-            return ResponseEntity.ok(order);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-
+        Orders order = orderService.processOrder(request.getCoinId(), request.getQuantity(), BigDecimal.valueOf(request.getStopPrice()),
+                BigDecimal.valueOf(request.getLimitPrice()), request.getOrderType(),
+                user.getId(), jwt);
+        return ResponseEntity.ok(order);
     }
 
     @GetMapping("/{orderId}")
