@@ -39,8 +39,8 @@ public class UserController {
         return new ResponseEntity<User>(user,HttpStatus.OK);
     }
 
-    @PatchMapping("/enable-two-factor/verify-otp/{otp}")
-    public ResponseEntity<User> enableTwoFactorAuthentication(@RequestHeader("Authorization") String jwt, @PathVariable String otp) throws Exception {
+    @PatchMapping("/enable-two-factor/verify-otp")
+    public ResponseEntity<User> enableTwoFactorAuthentication(@RequestHeader("Authorization") String jwt, @RequestParam String otp) throws Exception {
         User user = userService.findUserProfileByJwt(jwt);
         VerificationCode verificationCode = verificationCodeService.getVerificationCodeByUser(user.getId());
         String sendTo = verificationCode.getVerificationType().equals(VerificationType.EMAIL) ? verificationCode.getEmail() : verificationCode.getMobile();
@@ -53,8 +53,8 @@ public class UserController {
         throw new Exception("otp is wrong");
     }
 
-    @PatchMapping("/disable-two-factor/verify-otp/{otp}")
-    public ResponseEntity<User> disableTwoFactorAuthentication(@RequestHeader("Authorization") String jwt, @PathVariable String otp) throws Exception {
+    @PatchMapping("/disable-two-factor/verify-otp")
+    public ResponseEntity<User> disableTwoFactorAuthentication(@RequestHeader("Authorization") String jwt, @RequestParam String otp) throws Exception {
         User user = userService.findUserProfileByJwt(jwt);
         VerificationCode verificationCode = verificationCodeService.getVerificationCodeByUser(user.getId());
         String sendTo = verificationCode.getVerificationType().equals(VerificationType.EMAIL) ? verificationCode.getEmail() : verificationCode.getMobile();
