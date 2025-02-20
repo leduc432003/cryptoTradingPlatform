@@ -13,6 +13,7 @@ public class CoinDto {
     private String name;
     private String symbol;
     private String image;
+    private String description;
     private double currentPrice;
     private double marketCap;
     private double marketCapRank;

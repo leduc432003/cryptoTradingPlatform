@@ -22,7 +22,7 @@ import java.util.Map;
 @Service
 public class ChatbotServiceImpl implements ChatbotService {
 
-    String GEMINI_API_KEY = "AIzaSyCHnEadnHo4MtqP8M7CalaGEPA27OW7O58";
+    String GEMINI_API_KEY = "AIzaSyBZqcF_Wzogx2zFkKUveDfferLxPRKKVOw";
 
     private double convertToDouble(Object value) {
         if (value == null) return 0.0;
@@ -51,11 +51,13 @@ public class ChatbotServiceImpl implements ChatbotService {
         if(responseBody != null) {
             Map<String, Object> image = (Map<String, Object>) responseBody.get("image");
             Map<String, Object> marketData = (Map<String, Object>) responseBody.get("market_data");
+            Map<String, Object> description = (Map<String, Object>) responseBody.get("description");
             CoinDto coinDto = CoinDto.builder()
                     .id((String) responseBody.get("id"))
                     .name((String) responseBody.get("name"))
                     .symbol((String) responseBody.get("symbol"))
                     .image((String) image.get("large"))
+                    .description((String) description.get("en"))
                     //market data
                     .currentPrice(convertToDouble(((Map<String, Object>) marketData.get("current_price")).get("usd")))
                     .marketCap(convertToDouble(((Map<String, Object>) marketData.get("market_cap")).get("usd")))
@@ -214,6 +216,7 @@ public class ChatbotServiceImpl implements ChatbotService {
                                                                                 "The currency data id, " +
                                                                                         "symbol, current price, " +
                                                                                         "image, " +
+                                                                                        "description, " +
                                                                                         "market cap rank, " +
                                                                                         "market cap extra, " +
                                                                                         "total volume, " +
@@ -301,6 +304,7 @@ public class ChatbotServiceImpl implements ChatbotService {
                                                                                 "symbol, " +
                                                                                 "name, " +
                                                                                 "image, " +
+                                                                                "description, " +
                                                                                 "current price," +
                                                                                 "market cap, " +
                                                                                 "market cap rank, " +
