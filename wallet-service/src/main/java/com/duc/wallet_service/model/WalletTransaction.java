@@ -24,5 +24,6 @@ public class WalletTransaction {
     private LocalDate date;
     private String transferId;
     private String purpose;
+    @Column(precision = 19, scale = 6)
     private BigDecimal amount;
 }
