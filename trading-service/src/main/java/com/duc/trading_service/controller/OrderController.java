@@ -1,6 +1,7 @@
 package com.duc.trading_service.controller;
 
 import com.duc.trading_service.dto.UserDTO;
+import com.duc.trading_service.dto.UserRole;
 import com.duc.trading_service.dto.request.CreateOrderRequest;
 import com.duc.trading_service.model.OrderStatus;
 import com.duc.trading_service.model.Orders;
@@ -8,6 +9,10 @@ import com.duc.trading_service.model.OrderType;
 import com.duc.trading_service.service.OrderService;
 import com.duc.trading_service.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -69,5 +74,25 @@ public class OrderController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
+    }
+
+    @GetMapping("/admin")
+    public ResponseEntity<Page<Orders>> getAllOrders(
+            @RequestHeader("Authorization") String jwt,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String order
+    ) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        if (user.getRole() != UserRole.ROLE_ADMIN) {
+            throw new Exception("You are not authorized to access.");
+        }
+
+        Sort sort = order.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Orders> orderPage = orderService.getAllOrders(pageable);
+
+        return new ResponseEntity<>(orderPage, HttpStatus.OK);
     }
 }

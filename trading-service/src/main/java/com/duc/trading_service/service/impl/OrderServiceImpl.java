@@ -11,6 +11,8 @@ import com.duc.trading_service.repository.OrderRepository;
 import com.duc.trading_service.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -98,6 +100,11 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<Orders> getOrdersByStatus(Long userId, OrderStatus status) {
         return orderRepository.findByUserIdAndStatus(userId, status);
+    }
+
+    @Override
+    public Page<Orders> getAllOrders(Pageable pageable) {
+        return orderRepository.findAll(pageable);
     }
 
     @Transactional
