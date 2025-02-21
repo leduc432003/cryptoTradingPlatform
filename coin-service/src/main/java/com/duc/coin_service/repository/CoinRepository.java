@@ -16,4 +16,6 @@ public interface CoinRepository extends JpaRepository<Coin, String> {
     List<Coin> findByIsDelistedTrue();
     @Query("SELECT c.tradingSymbol FROM Coin c")
     List<String> findAllTradingSymbols();
+    List<Coin> findBySymbolContainingIgnoreCase(String keyword);
+    List<Coin> findByNameContainingIgnoreCase(String keyword);
 }

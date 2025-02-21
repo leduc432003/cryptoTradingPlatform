@@ -64,10 +64,9 @@ public class CoinController {
     }
 
     @GetMapping("/search")
-    ResponseEntity<JsonNode> searchCoin(@RequestParam("keyword") String keyword) throws Exception {
-        String coin = coinService.searchCoin(keyword);
-        JsonNode jsonNode = objectMapper.readTree(coin);
-        return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    ResponseEntity<List<Coin>> searchCoin(@RequestParam("keyword") String keyword) throws Exception {
+        List<Coin> coins = coinService.searchCoin(keyword);
+        return coins.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(coins);
     }
 
     @GetMapping("/details/{coinId}")

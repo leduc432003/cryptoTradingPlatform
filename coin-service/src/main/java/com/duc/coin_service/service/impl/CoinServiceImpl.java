@@ -286,22 +286,15 @@ public class CoinServiceImpl implements CoinService {
     }
 
     @Override
-    public String searchCoin(String keyword) throws Exception {
-        String url = "https://api.coingecko.com/api/v3/search?query=" + keyword;
+    public List<Coin> searchCoin(String keyword) throws Exception {
+        List<Coin> bySymbol = coinRepository.findBySymbolContainingIgnoreCase(keyword);
+        List<Coin> byName = coinRepository.findByNameContainingIgnoreCase(keyword);
 
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .header("Accept", "application/json")
-                    .header("x-cg-demo-api-key", API_KEY)
-                    .GET()
-                    .build();
+        byName.stream()
+                .filter(coin -> !bySymbol.contains(coin))
+                .forEach(bySymbol::add);
 
-            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-            return response.body();
-        } catch (HttpClientErrorException | HttpServerErrorException e) {
-            throw new Exception(e.getMessage());
-        }
+        return bySymbol;
     }
 
     @Override
