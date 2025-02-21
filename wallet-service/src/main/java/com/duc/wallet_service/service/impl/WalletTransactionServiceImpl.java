@@ -14,8 +14,12 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneOffset;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,38 +51,46 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
     }
 
     @Override
-    public List<WalletTransaction> getTransactionsByFilters(Long days, WalletTransactionType transactionType) {
-        LocalDate endDate = LocalDate.now();
-        LocalDate startDate = (days == null) ? LocalDate.MIN : endDate.minusDays(days);
-        List<WalletTransaction> transactions = walletTransactionRepository.findAllByDateBetween(startDate, endDate);
-        return transactions.stream()
-                .filter(tx -> transactionType == null || tx.getWalletTransactionType() == transactionType)
-                .toList();
+    public List<WalletTransaction> getTransactionsByFilters(LocalDate startDate, LocalDate endDate, List<WalletTransactionType> transactionTypes) {
+        if (startDate == null || endDate == null) {
+            throw new IllegalArgumentException("Start date and end date must not be null");
+        }
+        return walletTransactionRepository.findAllByDateBetweenAndTransactionTypes(startDate, endDate, transactionTypes);
     }
 
     @Override
-    public double getTotalAmountByFilters(Long days, WalletTransactionType transactionType) {
+    public double getTotalAmountByFilters(Long days, List<WalletTransactionType> transactionTypes) {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = (days == null) ? LocalDate.MIN : endDate.minusDays(days);
 
-        List<WalletTransaction> transactions = walletTransactionRepository.findAllByDateBetween(startDate, endDate);
-
-        return transactions.stream()
-                .filter(tx -> transactionType == null || tx.getWalletTransactionType() == transactionType)
+        return walletTransactionRepository.findAllByDateBetweenAndTransactionTypes(startDate, endDate, transactionTypes)
+                .stream()
                 .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
                 .sum();
     }
 
     @Override
-    public List<List<Object>> getTotalAmountByDateWithTimestamp(Long days, WalletTransactionType transactionType) {
+    public double getTotalAmountByDateRange(LocalDate startDate, LocalDate endDate, List<WalletTransactionType> transactionTypes) throws Exception {
+        if (startDate == null || endDate == null) {
+            throw new Exception("startDate và endDate không được để trống.");
+        }
+
+        List<WalletTransaction> transactions = walletTransactionRepository.findAllByDateBetweenAndTransactionTypes(startDate, endDate, transactionTypes);
+
+        return transactions.stream()
+                .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
+                .sum();
+    }
+
+    @Override
+    public List<List<Object>> getTotalAmountByDateWithTimestamp(Long days, List<WalletTransactionType> transactionTypes) {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = (days == null) ? LocalDate.MIN : endDate.minusDays(days);
 
-        List<WalletTransaction> transactions = walletTransactionRepository.findAllByDateBetween(startDate, endDate);
+        List<WalletTransaction> transactions = walletTransactionRepository.findAllByDateBetweenAndTransactionTypes(startDate, endDate, transactionTypes);
 
         return transactions.stream()
-                .filter(tx -> transactionType == null || tx.getWalletTransactionType() == transactionType)
-                .collect(Collectors.groupingBy(tx -> tx.getDate()))
+                .collect(Collectors.groupingBy(WalletTransaction::getDate))
                 .entrySet().stream()
                 .map(entry -> {
                     LocalDate date = entry.getKey();
@@ -87,10 +99,41 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
                             .sum();
 
                     long timestamp = date.atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000;
-
-                    List<Object> result = List.of(timestamp, totalAmount);
-                    return result;
+                    return Arrays.<Object>asList(timestamp, totalAmount);
                 })
+                .sorted(Comparator.comparing(o -> (Long) o.get(0))) // Sort by timestamp
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<List<Object>> getTotalAmountByMonthWithTimestamp(Long months, List<WalletTransactionType> transactionTypes) {
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = (months == null) ? LocalDate.MIN : endDate.minusMonths(months);
+
+        List<WalletTransaction> transactions = walletTransactionRepository.findAllByDateBetweenAndTransactionTypes(startDate, endDate, transactionTypes);
+
+        // Nhóm các giao dịch theo tháng
+        Map<YearMonth, List<WalletTransaction>> transactionsByMonth = transactions.stream()
+                .collect(Collectors.groupingBy(tx -> YearMonth.from(tx.getDate())));
+
+        // Xử lý từng nhóm (tháng)
+        return transactionsByMonth.entrySet().stream()
+                .map(entry -> {
+                    YearMonth yearMonth = entry.getKey(); // Lấy tháng
+                    List<WalletTransaction> monthlyTransactions = entry.getValue(); // Lấy danh sách giao dịch trong tháng
+
+                    // Tính tổng số tiền trong tháng
+                    double totalAmount = monthlyTransactions.stream()
+                            .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
+                            .sum();
+
+                    // Tạo timestamp cho ngày đầu tiên của tháng
+                    long timestamp = yearMonth.atDay(1).atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000;
+
+                    // Trả về danh sách chứa timestamp và tổng số tiền
+                    return Arrays.<Object>asList(timestamp, totalAmount);
+                })
+                .sorted(Comparator.comparing(o -> (Long) o.get(0))) // Sắp xếp theo timestamp
                 .collect(Collectors.toList());
     }
 
