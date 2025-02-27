@@ -22,7 +22,7 @@ import java.util.Map;
 @Service
 public class ChatbotServiceImpl implements ChatbotService {
 
-    String GEMINI_API_KEY = "AIzaSyBZqcF_Wzogx2zFkKUveDfferLxPRKKVOw";
+    String GEMINI_API_KEY = "AIzaSyAch3B_f1N3iEwDE82ZaHO_TVWuuqEXTLY";
 
     private double convertToDouble(Object value) {
         if (value == null) return 0.0;
@@ -168,7 +168,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         }
 
         CoinDto apiResponse = makeApiRequest(res.getCurrencyName().toLowerCase());
-        String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY;
+        String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" + GEMINI_API_KEY;
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         String body = new JSONObject()
@@ -260,7 +260,7 @@ public class ChatbotServiceImpl implements ChatbotService {
 
     @Override
     public String simpleChat(String prompt) {
-        String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY;
+        String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=" + GEMINI_API_KEY;
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         String requestBody = new JSONObject()
@@ -277,7 +277,7 @@ public class ChatbotServiceImpl implements ChatbotService {
     }
 
     public FunctionResponse getFunctionResponse(String prompt) {
-        String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY;
+        String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" + GEMINI_API_KEY;
         JSONObject requestBodyJson = new JSONObject()
                 .put("contents", new JSONArray()
                         .put(new JSONObject()
