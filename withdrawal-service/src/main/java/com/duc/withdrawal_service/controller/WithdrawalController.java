@@ -85,4 +85,22 @@ public class WithdrawalController {
 
         return new ResponseEntity<>(withdrawalDetails, HttpStatus.OK);
     }
+
+    @GetMapping("/admin/{withdrawalId}")
+    public ResponseEntity<WithdrawalDetailDTO> getWithdrawalById(@RequestHeader("Authorization") String jwt, @PathVariable Long withdrawalId) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        if(!user.getRole().equals(UserRole.ROLE_ADMIN)) {
+            throw new Exception("Only admin can watch withdrawal");
+        }
+        Withdrawal withdrawal = withdrawalService.getWithdrawalById(withdrawalId);
+        PaymentDetailsDTO bankAccount = paymentDetailsService.getUserPaymentDetailsById(jwt, withdrawal.getUserId());
+        WithdrawalDetailDTO withdrawalDetail = new WithdrawalDetailDTO();
+        withdrawalDetail.setWithdrawal(withdrawal);
+        if (bankAccount != null) {
+            withdrawalDetail.setBankAccount(bankAccount.getAccountNumber());
+            withdrawalDetail.setBankName(bankAccount.getBankName());
+            withdrawalDetail.setAccountHolderName(bankAccount.getAccountName());
+        }
+        return new ResponseEntity<>(withdrawalDetail, HttpStatus.OK);
+    }
 }

@@ -76,4 +76,13 @@ public class WithdrawalServiceImpl implements WithdrawalService {
                 .toList();
         return filteredWithdrawal;
     }
+
+    @Override
+    public Withdrawal getWithdrawalById(Long withdrawalId) throws Exception {
+        Optional<Withdrawal> withdrawal = withdrawalRepository.findById(withdrawalId);
+        if(withdrawal.isEmpty()) {
+            throw new Exception("Withdraw not found with id + " + withdrawalId);
+        }
+        return withdrawal.get();
+    }
 }
