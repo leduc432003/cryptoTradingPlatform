@@ -22,7 +22,7 @@ import java.util.Map;
 @Service
 public class ChatbotServiceImpl implements ChatbotService {
 
-    String GEMINI_API_KEY = "AIzaSyAch3B_f1N3iEwDE82ZaHO_TVWuuqEXTLY";
+    String GEMINI_API_KEY = "AIzaSyCoyHSK_si1TBs12HEOoqr09xH_0qn-GvY";
 
     private double convertToDouble(Object value) {
         if (value == null) return 0.0;
@@ -135,32 +135,35 @@ public class ChatbotServiceImpl implements ChatbotService {
             ApiResponse withdrawalStepsResponse = new ApiResponse();
             String withdrawalSteps = "Các bước để thực hiện rút tiền:\n" +
                     "1. Đăng nhập vào tài khoản của bạn.\n" +
-                    "2. Chọn mục 'Rút tiền' hoặc 'Withdraw' từ menu.\n" +
-                    "3. Nhập số tiền bạn muốn rút và nhập số tài khoản ngân hàng.\n" +
-                    "4. Kiểm tra lại thông tin giao dịch và xác nhận.\n" +
-                    "5. Chờ xác nhận từ admin hoặc hệ thống.\n" +
-                    "6. Hoàn thành giao dịch và nhận tiền vào tài khoản của bạn.";
+                    "2. Truy cập vào ví của bạn.\n" +
+                    "3. Chọn mục 'Rút tiền' hoặc 'Withdrawal' từ menu.\n" +
+                    "4. Nhập số tiền bạn muốn rút và nhập số tài khoản ngân hàng.\n" +
+                    "5. Kiểm tra lại thông tin giao dịch và xác nhận.\n" +
+                    "6. Chờ xác nhận từ admin hoặc hệ thống.\n" +
+                    "7. Hoàn thành giao dịch và nhận tiền vào tài khoản của bạn.";
             withdrawalStepsResponse.setMessage(withdrawalSteps);
             return withdrawalStepsResponse;
         } else if (res.getFunctionName().equals("getDepositSteps")) {
             ApiResponse depositStepsResponse = new ApiResponse();
             String depositSteps = "Các bước để thực hiện nạp tiền:\n" +
                     "1. Đăng nhập vào tài khoản của bạn.\n" +
-                    "2. Chọn mục 'Nạp tiền' hoặc 'Deposit' từ menu.\n" +
-                    "3. Nhập số tiền bạn muốn nạp.\n" +
-                    "4. Quét mã QR để chuyển khoản và không được thay đổi thông tin chuyển khoản.\n" +
-                    "5. Chờ hệ thống xác nhận và hoàn tất giao dịch.\n" +
-                    "6. Tiền sẽ được nạp vào tài khoản của bạn.";
+                    "2. Truy cập vào ví của bạn.\n" +
+                    "3. Chọn mục 'Nạp tiền' hoặc 'Deposit' từ menu.\n" +
+                    "4. Nhập số tiền bạn muốn nạp.\n" +
+                    "5. Quét mã QR để chuyển khoản và không được thay đổi thông tin chuyển khoản.\n" +
+                    "6. Chờ hệ thống xác nhận và hoàn tất giao dịch.\n" +
+                    "7. Tiền sẽ được nạp vào tài khoản của bạn. \n" +
+                    "Nếu cần hỗ trợ liên hệ email: anhducle4433@gmail.com .\n";
             depositStepsResponse.setMessage(depositSteps);
             return depositStepsResponse;
         } else if (res.getFunctionName().equals("getTransactionSteps")) {
             ApiResponse transactionStepsResponse = new ApiResponse();
             String transactionSteps = "Các bước để thực hiện giao dịch:\n" +
                     "1. Đăng nhập vào tài khoản của bạn.\n" +
-                    "2. Chọn mục 'Giao dịch' hoặc 'Trade' từ menu.\n" +
-                    "3. Chọn loại giao dịch bạn muốn thực hiện (Mua hoặc Bán).\n" +
-                    "4. Nhập số lượng tiền bạn muốn giao dịch và xác nhận.\n" +
-                    "5. Kiểm tra lại thông tin giao dịch và xác nhận.\n" +
+                    "2. Truy cập vào coin muốn giao dịch.\n" +
+                    "3. Chọn 'Giao dịch' hoặc 'Trade'.\n" +
+                    "4. Chọn loại giao dịch bạn muốn thực hiện (Mua hoặc Bán).\n" +
+                    "5. Nhập số lượng coin bạn muốn giao dịch và xác nhận.\n" +
                     "6. Chờ hệ thống xử lý và hoàn tất giao dịch.\n" +
                     "7. Xem kết quả giao dịch trong tài khoản của bạn.";
             transactionStepsResponse.setMessage(transactionSteps);
@@ -168,7 +171,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         }
 
         CoinDto apiResponse = makeApiRequest(res.getCurrencyName().toLowerCase());
-        String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" + GEMINI_API_KEY;
+        String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_API_KEY;
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         String body = new JSONObject()
