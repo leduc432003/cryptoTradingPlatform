@@ -59,13 +59,13 @@ public class WatchlistServiceImpl implements WatchlistService {
     }
 
     @Override
-    public void deleteItemFromWatchList(String coinId, Long userId) throws Exception {
+    public Watchlist deleteItemFromWatchList(String coinId, Long userId) throws Exception {
         Watchlist watchlist = findUserWatchList(userId);
         CoinDTO coinDTO = coinService.getCoinById(coinId);
         if(coinDTO == null) {
             throw new Exception("Coin not found");
         }
         watchlist.getCoinIds().remove(coinId);
-        watchlistRepository.save(watchlist);
+        return watchlistRepository.save(watchlist);
     }
 }

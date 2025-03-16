@@ -7,5 +7,5 @@ public interface WatchlistService {
     Watchlist createWatchList(Long userId) throws Exception;
     Watchlist findById(Long id) throws Exception;
     Watchlist addItemToWatchList(String coinId, Long userId) throws Exception;
-    void deleteItemFromWatchList(String coinId, Long userId) throws Exception;
+    Watchlist deleteItemFromWatchList(String coinId, Long userId) throws Exception;
 }

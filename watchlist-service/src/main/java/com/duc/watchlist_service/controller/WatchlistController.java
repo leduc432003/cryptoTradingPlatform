@@ -56,11 +56,11 @@ public class WatchlistController {
     }
 
     @PatchMapping("/delete/coin/{coinId}")
-    public ResponseEntity<String> deleteItemToWatchlist(
+    public ResponseEntity<Watchlist> deleteItemToWatchlist(
             @RequestHeader("Authorization") String jwt,
             @PathVariable String coinId) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
-        watchlistService.deleteItemFromWatchList(coinId, user.getId());
-        return ResponseEntity.ok("delete coin success.");
+        Watchlist watchlist = watchlistService.deleteItemFromWatchList(coinId, user.getId());
+        return new ResponseEntity<>(watchlist, HttpStatus.OK);
     }
 }
