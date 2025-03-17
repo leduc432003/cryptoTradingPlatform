@@ -100,7 +100,7 @@ public class OrderController {
         return new ResponseEntity<>(orderPage, HttpStatus.OK);
     }
 
-    @GetMapping("/total-transactions-range")
+    @GetMapping("/admin/total-transactions-range")
     public Map<String, Double> getTotalTransactionsByCoinInDateRange(
             @RequestHeader("Authorization") String jwt,
             @RequestParam(required = false) String startDate,
