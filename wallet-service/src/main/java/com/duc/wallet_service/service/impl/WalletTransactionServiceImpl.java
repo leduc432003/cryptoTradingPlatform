@@ -63,10 +63,19 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = (days == null) ? LocalDate.MIN : endDate.minusDays(days);
 
-        return walletTransactionRepository.findAllByDateBetweenAndTransactionTypes(startDate, endDate, transactionTypes)
-                .stream()
+        List<WalletTransaction> transactions = walletTransactionRepository.findAllByDateBetweenAndTransactionTypes(startDate, endDate, transactionTypes);
+
+        double totalAmount = transactions.stream()
+                .filter(tx -> tx.getWalletTransactionType() != WalletTransactionType.REFUND_BUY_ASSET)
                 .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
                 .sum();
+
+        double refundAmount = transactions.stream()
+                .filter(tx -> tx.getWalletTransactionType() == WalletTransactionType.REFUND_BUY_ASSET)
+                .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
+                .sum();
+
+        return totalAmount - refundAmount;
     }
 
     @Override
@@ -77,9 +86,17 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
 
         List<WalletTransaction> transactions = walletTransactionRepository.findAllByDateBetweenAndTransactionTypes(startDate, endDate, transactionTypes);
 
-        return transactions.stream()
+        double totalAmount = transactions.stream()
+                .filter(tx -> tx.getWalletTransactionType() != WalletTransactionType.REFUND_BUY_ASSET)
                 .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
                 .sum();
+
+        double refundAmount = transactions.stream()
+                .filter(tx -> tx.getWalletTransactionType() == WalletTransactionType.REFUND_BUY_ASSET)
+                .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
+                .sum();
+
+        return totalAmount - refundAmount;
     }
 
     @Override
@@ -94,12 +111,22 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
                 .entrySet().stream()
                 .map(entry -> {
                     LocalDate date = entry.getKey();
-                    double totalAmount = entry.getValue().stream()
+                    List<WalletTransaction> dailyTransactions = entry.getValue();
+
+                    double totalAmount = dailyTransactions.stream()
+                            .filter(tx -> tx.getWalletTransactionType() != WalletTransactionType.REFUND_BUY_ASSET)
                             .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
                             .sum();
 
+                    double refundAmount = dailyTransactions.stream()
+                            .filter(tx -> tx.getWalletTransactionType() == WalletTransactionType.REFUND_BUY_ASSET)
+                            .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
+                            .sum();
+
+                    double netAmount = totalAmount - refundAmount;
+
                     long timestamp = date.atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000;
-                    return Arrays.<Object>asList(timestamp, totalAmount);
+                    return Arrays.<Object>asList(timestamp, netAmount);
                 })
                 .sorted(Comparator.comparing(o -> (Long) o.get(0))) // Sort by timestamp
                 .collect(Collectors.toList());
@@ -124,14 +151,23 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
 
                     // Tính tổng số tiền trong tháng
                     double totalAmount = monthlyTransactions.stream()
+                            .filter(tx -> tx.getWalletTransactionType() != WalletTransactionType.REFUND_BUY_ASSET)
                             .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
                             .sum();
+
+                    // Tính tổng số tiền của REFUND_BUY_ASSET trong tháng
+                    double refundAmount = monthlyTransactions.stream()
+                            .filter(tx -> tx.getWalletTransactionType() == WalletTransactionType.REFUND_BUY_ASSET)
+                            .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
+                            .sum();
+
+                    double netAmount = totalAmount - refundAmount;
 
                     // Tạo timestamp cho ngày đầu tiên của tháng
                     long timestamp = yearMonth.atDay(1).atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000;
 
-                    // Trả về danh sách chứa timestamp và tổng số tiền
-                    return Arrays.<Object>asList(timestamp, totalAmount);
+                    // Trả về danh sách chứa timestamp và tổng số tiền sau khi trừ REFUND
+                    return Arrays.<Object>asList(timestamp, netAmount);
                 })
                 .sorted(Comparator.comparing(o -> (Long) o.get(0))) // Sắp xếp theo timestamp
                 .collect(Collectors.toList());

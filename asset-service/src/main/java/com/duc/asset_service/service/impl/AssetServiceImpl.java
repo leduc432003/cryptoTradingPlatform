@@ -1,13 +1,16 @@
 package com.duc.asset_service.service.impl;
 
 import com.duc.asset_service.dto.CoinDTO;
+import com.duc.asset_service.dto.UserDTO;
 import com.duc.asset_service.model.Asset;
 import com.duc.asset_service.repository.AssetRepository;
 import com.duc.asset_service.service.AssetService;
 import com.duc.asset_service.service.CoinService;
+import com.duc.asset_service.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -15,6 +18,8 @@ import java.util.List;
 public class AssetServiceImpl implements AssetService {
     private final AssetRepository assetRepository;
     private final CoinService coinService;
+    private final UserService userService;
+    private final String adminEmail = "admin@gmail.com";
 
     @Override
     public Asset createAsset(Long userId, String coinId, double quantity) {
@@ -71,27 +76,60 @@ public class AssetServiceImpl implements AssetService {
         if (fromAsset == null || fromAsset.getQuantity() < amount) {
             throw new Exception("Not enough balance in " + fromCoinId);
         }
+        UserDTO adminUser = userService.getUserByEmail(adminEmail);
+        Asset adminAsset = assetRepository.findByUserIdAndCoinId(adminUser.getId(), toCoinId);
         double fromCoinPrice = fromCoin.getCurrentPrice();
         double toCoinPrice = toCoin.getCurrentPrice();
-        double convertedQuantity = (amount * fromCoinPrice) / toCoinPrice;
+        double totalConvertedQuantity = (amount * fromCoinPrice) / toCoinPrice;
+        BigDecimal feePercentage = toCoin.getTransactionFee();
+        double feeAmount = totalConvertedQuantity * feePercentage.doubleValue();
+        double netConvertedQuantity = totalConvertedQuantity - feeAmount;
+
+        if (adminAsset == null || adminAsset.getQuantity() < totalConvertedQuantity) {
+            throw new Exception("Exchange does not have enough " + toCoinId + " to complete the transaction");
+        }
+
         fromAsset.setQuantity(fromAsset.getQuantity() - amount);
         if (fromAsset.getQuantity() <= 0) {
             assetRepository.delete(fromAsset);
         } else {
             assetRepository.save(fromAsset);
         }
+
+        adminAsset.setQuantity(adminAsset.getQuantity() - totalConvertedQuantity);
+        if (adminAsset.getQuantity() <= 0) {
+            assetRepository.delete(adminAsset);
+        } else {
+            assetRepository.save(adminAsset);
+        }
+
         Asset toAsset = findAssetByUserIdAndCoinId(userId, toCoinId);
         if (toAsset == null) {
             toAsset = Asset.builder()
                     .userId(userId)
                     .coinId(toCoinId)
-                    .quantity(convertedQuantity)
+                    .quantity(netConvertedQuantity)
                     .buyPrice(toCoinPrice)
                     .build();
         } else {
-            toAsset.setQuantity(toAsset.getQuantity() + convertedQuantity);
+            toAsset.setQuantity(toAsset.getQuantity() + netConvertedQuantity);
         }
 
-        return assetRepository.save(toAsset);
+        assetRepository.save(toAsset);
+
+        Asset adminFromAsset = findAssetByUserIdAndCoinId(adminUser.getId(), fromCoinId);
+        if (adminFromAsset == null) {
+            adminFromAsset = Asset.builder()
+                    .userId(adminUser.getId())
+                    .coinId(fromCoinId)
+                    .quantity(amount) // Sàn nhận toàn bộ 5 BTC
+                    .buyPrice(fromCoinPrice)
+                    .build();
+        } else {
+            adminFromAsset.setQuantity(adminFromAsset.getQuantity() + amount);
+        }
+        assetRepository.save(adminFromAsset);
+
+        return toAsset;
     }
 }

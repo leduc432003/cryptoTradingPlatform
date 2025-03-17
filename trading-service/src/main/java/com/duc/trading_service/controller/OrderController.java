@@ -6,6 +6,7 @@ import com.duc.trading_service.dto.request.CreateOrderRequest;
 import com.duc.trading_service.model.OrderStatus;
 import com.duc.trading_service.model.Orders;
 import com.duc.trading_service.model.OrderType;
+import com.duc.trading_service.service.OrderItemService;
 import com.duc.trading_service.service.OrderService;
 import com.duc.trading_service.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,6 +29,7 @@ import java.util.List;
 public class OrderController {
     private final OrderService orderService;
     private final UserService userService;
+    private final OrderItemService orderItemService;
 
     @PostMapping
     public ResponseEntity<?> payOrderPayment(@RequestHeader("Authorization") String jwt, @RequestBody CreateOrderRequest request) throws Exception {
@@ -94,5 +98,21 @@ public class OrderController {
         Page<Orders> orderPage = orderService.getAllOrders(pageable);
 
         return new ResponseEntity<>(orderPage, HttpStatus.OK);
+    }
+
+    @GetMapping("/total-transactions-range")
+    public Map<String, Double> getTotalTransactionsByCoinInDateRange(
+            @RequestHeader("Authorization") String jwt,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        if (user.getRole() != UserRole.ROLE_ADMIN) {
+            throw new Exception("You are not authorized to access.");
+        }
+
+        LocalDate start = (startDate != null) ? LocalDate.parse(startDate) : LocalDate.now();
+        LocalDate end = (endDate != null) ? LocalDate.parse(endDate) : start;
+
+        return orderItemService.getTotalTransactionsByCoinInDateRange(start, end);
     }
 }

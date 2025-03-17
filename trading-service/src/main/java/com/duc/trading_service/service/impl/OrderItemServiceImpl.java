@@ -6,6 +6,12 @@ import com.duc.trading_service.service.OrderItemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class OrderItemServiceImpl implements OrderItemService {
@@ -19,5 +25,18 @@ public class OrderItemServiceImpl implements OrderItemService {
         orderItem.setBuyPrice(buyPrice);
         orderItem.setSellPrice(sellPrice);
         return orderItemRepository.save(orderItem);
+    }
+
+    @Override
+    public Map<String, Double> getTotalTransactionsByCoinInDateRange(LocalDate startDate, LocalDate endDate) {
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
+
+        List<Object[]> results = orderItemRepository.getTotalTransactionsByCoinInDateRange(startDateTime, endDateTime);
+        Map<String, Double> transactions = new HashMap<>();
+        for (Object[] result : results) {
+            transactions.put((String) result[0], (Double) result[1]);
+        }
+        return transactions;
     }
 }

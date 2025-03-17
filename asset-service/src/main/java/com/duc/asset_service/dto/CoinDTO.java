@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 @NoArgsConstructor
@@ -67,4 +68,10 @@ public class CoinDTO {
     private double priceChangePercentage1hInCurrency;
     @JsonProperty("price_change_percentage_7d_in_currency")
     private double priceChangePercentage7dInCurrency;
+    @JsonProperty("transaction_fee")
+    private BigDecimal transactionFee;
+    @JsonProperty("is_new")
+    private boolean isNew = false;
+    @JsonProperty("trading_symbol")
+    private String tradingSymbol;
 }
