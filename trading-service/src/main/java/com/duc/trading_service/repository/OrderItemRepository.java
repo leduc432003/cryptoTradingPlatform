@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,6 +15,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             "FROM OrderItem oi " +
             "JOIN oi.order o " +
             "WHERE o.timestamp BETWEEN :startDate AND :endDate " +
+            "AND o.status = com.duc.trading_service.model.OrderStatus.SUCCESS " +
             "GROUP BY oi.coinId")
     List<Object[]> getTotalTransactionsByCoinInDateRange(@Param("startDate") LocalDateTime startDate,
                                                          @Param("endDate") LocalDateTime endDate);
