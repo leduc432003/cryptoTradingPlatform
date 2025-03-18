@@ -2,6 +2,9 @@ server:
   port: 5000
 
 spring:
+  redis:
+    host: localhost
+    port: 6379
   cloud:
     gateway:
       routes:
@@ -10,46 +13,100 @@ spring:
             lb://user-service
           predicates:
             - Path=/api/auth/**, /users/**, /api/users/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
         - id: asset-service
           uri:
             lb://asset-service
           predicates:
             - Path=/api/asset/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
         - id: coin-service
           uri:
             lb://coin-service
           predicates:
             - Path=/api/coins/**, /api/admin/coins/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
         - id: trading-service
           uri:
             lb://trading-service
           predicates:
             - Path=/api/orders/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
         - id: wallet-service
           uri:
             lb://wallet-service
           predicates:
             - Path=/api/wallet/**, /api/history/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
         - id: watchlist-service
           uri:
             lb://watchlist-service
           predicates:
             - Path=/api/watchlist/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
         - id: withdrawal-service
           uri:
             lb://withdrawal-service
           predicates:
             - Path=/api/withdrawal/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
         - id: payment-service
           uri:
             lb://payment-service
           predicates:
             - Path=/api/payments/**, /api/payment-details/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
         - id: chatbox
           uri:
             lb://chatbox
           predicates:
             - Path=/ai/chat/**, /**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
 
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
