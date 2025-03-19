@@ -19,7 +19,7 @@ public class AssetServiceImpl implements AssetService {
     private final AssetRepository assetRepository;
     private final CoinService coinService;
     private final UserService userService;
-    private final String adminEmail = "admin@gmail.com";
+    private static final String ADMIN_EMAIL = "admin@gmail.com";
 
     @Override
     public Asset createAsset(Long userId, String coinId, double quantity) {
@@ -76,7 +76,7 @@ public class AssetServiceImpl implements AssetService {
         if (fromAsset == null || fromAsset.getQuantity() < amount) {
             throw new Exception("Not enough balance in " + fromCoinId);
         }
-        UserDTO adminUser = userService.getUserByEmail(adminEmail);
+        UserDTO adminUser = userService.getUserByEmail(ADMIN_EMAIL);
         Asset adminAsset = assetRepository.findByUserIdAndCoinId(adminUser.getId(), toCoinId);
         double fromCoinPrice = fromCoin.getCurrentPrice();
         double toCoinPrice = toCoin.getCurrentPrice();
@@ -122,7 +122,7 @@ public class AssetServiceImpl implements AssetService {
             adminFromAsset = Asset.builder()
                     .userId(adminUser.getId())
                     .coinId(fromCoinId)
-                    .quantity(amount) // Sàn nhận toàn bộ 5 BTC
+                    .quantity(amount)
                     .buyPrice(fromCoinPrice)
                     .build();
         } else {
