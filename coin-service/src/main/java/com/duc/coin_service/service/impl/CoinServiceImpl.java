@@ -38,6 +38,7 @@ public class CoinServiceImpl implements CoinService {
     @Value("${internal.service.token}")
     private String internalServiceToken;
     private static final String API_KEY = "CG-HfJNVa7kfaaTEWbWDmjDQnWM";
+    private static final String ADMIN_EMAIL = "admin@gmail.com";
 
     public Date parseIsoDate(String dateString) {
         try {
@@ -415,7 +416,11 @@ public class CoinServiceImpl implements CoinService {
             throw new Exception(coinId + " already exists");
         }
         if (minimumBuyPrice <= 0) {
-            throw new Exception("Minimum sell price must be greater than 0");
+            throw new Exception("Minimum buy price must be greater than 0");
+        }
+
+        if (transactionFee < 0) {
+            throw new Exception("Transaction fee  must be greater than 0 or = 0");
         }
 
         String url = "https://api.coingecko.com/api/v3/coins/" + coinId;
@@ -508,28 +513,30 @@ public class CoinServiceImpl implements CoinService {
     @Override
     public Coin updateCoin(String coinId, double minimumBuyPrice, double transactionFee, Long totalSupply, String tradingSymbol) throws Exception {
         if (minimumBuyPrice <= 0) {
-            throw new Exception("Minimum sell price must be greater than 0");
+            throw new Exception("Minimum buy price must be greater than 0");
         }
 
         if (transactionFee < 0) {
-            throw new Exception("Minimum sell price must be greater than 0 or = 0");
+            throw new Exception("Transaction fee  must be greater than 0 or = 0");
         }
         Coin coin = findById(coinId);
         coin.setMinimumBuyPrice(BigDecimal.valueOf(minimumBuyPrice));
         coin.setTransactionFee(BigDecimal.valueOf(transactionFee));
         coin.setTradingSymbol(tradingSymbol);
 
-        UserDTO admin = userService.getUserByEmail("admin@gmail.com");
+        if(totalSupply != null) {
+            UserDTO admin = userService.getUserByEmail(ADMIN_EMAIL);
 
-        AssetDTO oldAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coin.getId(), admin.getId());
-        if (oldAsset == null) {
-            CreateAssetRequest assetRequest = new CreateAssetRequest();
-            assetRequest.setUserId(admin.getId());
-            assetRequest.setCoinId(coinId);
-            assetRequest.setQuantity(totalSupply);
-            assetService.createAsset(internalServiceToken, assetRequest);
-        } else {
-            assetService.updateAsset(internalServiceToken, oldAsset.getId(), totalSupply);
+            AssetDTO oldAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coin.getId(), admin.getId());
+            if (oldAsset == null) {
+                CreateAssetRequest assetRequest = new CreateAssetRequest();
+                assetRequest.setUserId(admin.getId());
+                assetRequest.setCoinId(coinId);
+                assetRequest.setQuantity(totalSupply);
+                assetService.createAsset(internalServiceToken, assetRequest);
+            } else {
+                assetService.updateAsset(internalServiceToken, oldAsset.getId(), totalSupply);
+            }
         }
 
         return coinRepository.save(coin);
