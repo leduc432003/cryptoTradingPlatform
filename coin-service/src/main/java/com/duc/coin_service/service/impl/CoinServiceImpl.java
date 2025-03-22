@@ -24,9 +24,11 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -318,9 +320,10 @@ public class CoinServiceImpl implements CoinService {
     }
 
     @Override
-    public String getTrendingCoins() throws Exception {
-        String url = "https://api.coingecko.com/api/v3/search/trending";
-
+    public List<Coin> getTrendingCoins(int limit) throws Exception {
+        List<String> coinList1 = coinRepository.findAllCoinIds();
+        String list = coinList1.toString().replaceAll("[\\[\\]]", "").replaceAll("\\s+", "");
+        String url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=50&price_change_percentage=1h%2C7d" + "&ids=" + list;
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -329,8 +332,17 @@ public class CoinServiceImpl implements CoinService {
                     .GET()
                     .build();
 
-            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-            return response.body();
+            HttpClient client = HttpClient.newHttpClient();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            List<Coin> coinList = objectMapper.readValue(response.body(), new TypeReference<List<Coin>>() {});
+
+            List<Coin> trendingCoins = coinList.stream()
+                    .sorted(Comparator.comparingDouble(Coin::getPriceChangePercentage24h).reversed())
+                    .limit(limit)
+                    .collect(Collectors.toList());
+
+            return trendingCoins;
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             throw new Exception(e.getMessage());
         }

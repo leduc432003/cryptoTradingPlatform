@@ -16,7 +16,7 @@ public interface CoinService {
     Coin findById(String coinId) throws Exception;
     List<Coin> searchCoin(String keyword) throws Exception;
     String getTop50CoinsByMarketCapRank() throws Exception;
-    String getTrendingCoins() throws Exception;
+    List<Coin>  getTrendingCoins(int limit) throws Exception;
     String getGlobal() throws Exception;
     String getCategoriesList(String order) throws Exception;
     String getNews(String categories, Long timestamp) throws Exception;

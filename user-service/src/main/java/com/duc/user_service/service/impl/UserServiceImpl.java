@@ -2,14 +2,9 @@ package com.duc.user_service.service.impl;
 
 import com.duc.user_service.dto.request.AdminCreateUserRequest;
 import com.duc.user_service.dto.request.UserUpdateRequest;
-import com.duc.user_service.model.TwoFactorAuth;
-import com.duc.user_service.model.TwoFactorOTP;
-import com.duc.user_service.model.User;
-import com.duc.user_service.model.VerificationType;
+import com.duc.user_service.model.*;
 import com.duc.user_service.repository.UserRepository;
-import com.duc.user_service.service.JwtService;
-import com.duc.user_service.service.TwoFactorOTPService;
-import com.duc.user_service.service.UserService;
+import com.duc.user_service.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,6 +17,8 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final TwoFactorOTPService twoFactorOTPService;
+    private final VerificationCodeService verificationCodeService;
+    private final ForgotPasswordService forgotPasswordService;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -93,8 +90,16 @@ public class UserServiceImpl implements UserService {
     @Override
     public void deleteUserById(Long userId) {
         TwoFactorOTP twoFactorOTP = twoFactorOTPService.findByUser(userId);
+        VerificationCode verificationCode = verificationCodeService.getVerificationCodeByUser(userId);
+        ForgotPasswordOTP forgotPasswordOTP = forgotPasswordService.findByUser(userId);
         if(twoFactorOTP != null) {
             twoFactorOTPService.deleteTwoFactorOTP(twoFactorOTP);
+        }
+        if(verificationCode != null) {
+            verificationCodeService.deleteVerificationCodeById(verificationCode);
+        }
+        if(forgotPasswordOTP != null) {
+            forgotPasswordService.deleteOTP(forgotPasswordOTP);
         }
         userRepository.deleteById(userId);
     }

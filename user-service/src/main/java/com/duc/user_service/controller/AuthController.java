@@ -11,6 +11,7 @@ import com.duc.user_service.model.*;
 import com.duc.user_service.repository.UserRepository;
 import com.duc.user_service.service.*;
 import com.duc.user_service.utils.OtpUtils;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.RandomStringUtils;
 import org.springframework.http.HttpStatus;
@@ -34,12 +35,13 @@ public class AuthController {
     private final UserRepository userRepository;
     private final CustomerUserDetailService customerUserDetailService;
     private final TwoFactorOTPService twoFactorOTPService;
+    private final VerificationCodeService verificationCodeService;
     private final UserService userService;
     private final ForgotPasswordService forgotPasswordService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse> register(@RequestBody UserRequest user) throws Exception {
+    public ResponseEntity<ApiResponse> register(@Valid @RequestBody UserRequest user) throws Exception {
         User isEmailExist = userRepository.findByEmail(user.getEmail());
         if(isEmailExist != null) {
             throw new Exception("email is already used with another user");
@@ -64,14 +66,12 @@ public class AuthController {
         }
         User saveUser = userRepository.save(newUser);
 
-
-        String otp = OtpUtils.generateOtp();
-        TwoFactorOTP twoFactorOTP = twoFactorOTPService.createTwoFactorOTP(saveUser, otp, null);
+        VerificationCode verificationCode = verificationCodeService.sendVerificationCode(saveUser, VerificationType.EMAIL);
 
         NotificationEvent notificationEvent = NotificationEvent.builder()
                 .channel("EMAIL")
                 .recipient(saveUser.getEmail())
-                .content(otp)
+                .content(verificationCode.getOtp())
                 .build();
         kafkaTemplate.send("send-otp", notificationEvent);
 
@@ -82,7 +82,7 @@ public class AuthController {
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<AuthResponse> signin(@RequestBody LoginRequest loginRequest) throws Exception {
+    public ResponseEntity<AuthResponse> signin(@Valid @RequestBody LoginRequest loginRequest) throws Exception {
         String userName = loginRequest.getEmail();
         String password = loginRequest.getPassword();
 
@@ -91,12 +91,23 @@ public class AuthController {
         if (user == null) {
             throw new Exception("Invalid email or password");
         }
+        Authentication auth = authenticate(userName, password);
 
         if (!user.isVerified()) {
+            VerificationCode verificationCode = verificationCodeService.getVerificationCodeByUser(user.getId());
+            if (verificationCode != null) {
+                verificationCodeService.deleteVerificationCodeById(verificationCode);
+            }
+            VerificationCode newVerificationCode = verificationCodeService.sendVerificationCode(user, VerificationType.EMAIL);
+            NotificationEvent notificationEvent = NotificationEvent.builder()
+                    .channel("EMAIL")
+                    .recipient(user.getEmail())
+                    .content(newVerificationCode.getOtp())
+                    .build();
+            kafkaTemplate.send("send-otp", notificationEvent);
             throw new Exception("Email is not verified. Please check your email.");
         }
 
-        Authentication auth = authenticate(userName, password);
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         String jwt = JwtService.generateToken(auth);
@@ -161,8 +172,11 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password/send-otp")
-    public ResponseEntity<AuthResponse> sendForgotPasswordOTP(@RequestBody ForgotPasswordRequest request) throws Exception {
+    public ResponseEntity<AuthResponse> sendForgotPasswordOTP(@Valid @RequestBody ForgotPasswordRequest request) throws Exception {
         User user =  userService.findUserByEmail(request.getEmail());
+        if (!user.isVerified()) {
+            throw new Exception("Account is not verified. Please verify your email first.");
+        }
         String otp = OtpUtils.generateOtp();
         UUID uuid = UUID.randomUUID();
         String id = uuid.toString();
@@ -209,7 +223,7 @@ public class AuthController {
 
     @PatchMapping("/reset-password")
     public ResponseEntity<ApiResponse> resetPassword(@RequestParam String sessionId,
-                                                     @RequestBody ResetPasswordRequest request) throws Exception {
+                                                     @Valid @RequestBody ResetPasswordRequest request) throws Exception {
         ForgotPasswordOTP forgotPasswordOTP = forgotPasswordService.findById(sessionId);
         if (forgotPasswordOTP == null) {
             throw new Exception("Invalid session ID");
@@ -232,15 +246,15 @@ public class AuthController {
             throw new Exception("User not found");
         }
 
-        TwoFactorOTP twoFactorOTP = twoFactorOTPService.findByUser(user.getId());
-        if (twoFactorOTP == null || !twoFactorOTP.getOtp().equals(otp)) {
+        VerificationCode verificationCode = verificationCodeService.getVerificationCodeByUser(user.getId());
+        if (verificationCode == null || !verificationCode.getOtp().equals(otp)) {
             throw new Exception("Invalid OTP");
         }
 
         user.setVerified(true);
         userRepository.save(user);
 
-        twoFactorOTPService.deleteTwoFactorOTP(twoFactorOTP);
+        verificationCodeService.deleteVerificationCodeById(verificationCode);
 
         ApiResponse response = ApiResponse.builder()
                 .message("Email verified successfully. You can now log in.")

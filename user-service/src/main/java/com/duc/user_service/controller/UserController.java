@@ -10,6 +10,7 @@ import com.duc.user_service.model.*;
 import com.duc.user_service.repository.UserRepository;
 import com.duc.user_service.service.UserService;
 import com.duc.user_service.service.VerificationCodeService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -88,7 +89,7 @@ public class UserController {
     }
 
     @PutMapping("/change-password")
-    public ResponseEntity<String> changePassword(@RequestHeader("Authorization") String jwt, @RequestBody ChangePasswordRequest request) throws Exception {
+    public ResponseEntity<String> changePassword(@RequestHeader("Authorization") String jwt, @Valid @RequestBody ChangePasswordRequest request) throws Exception {
         User user = userService.findUserProfileByJwt(jwt);
 
         userService.updatePassword(user, request.getOldPassword(), request.getNewPassword());
@@ -97,7 +98,7 @@ public class UserController {
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<User> updateUser(@RequestHeader("Authorization") String jwt, @RequestBody UserUpdateRequest request) throws Exception {
+    public ResponseEntity<User> updateUser(@RequestHeader("Authorization") String jwt, @Valid @RequestBody UserUpdateRequest request) throws Exception {
         User user = userService.findUserProfileByJwt(jwt);
 
         User userUpdate = userService.updateUser(user.getId(), request);
@@ -147,7 +148,7 @@ public class UserController {
     }
 
     @PostMapping("/admin")
-    public ResponseEntity<User> createUser(@RequestHeader("Authorization") String jwt, @RequestBody AdminCreateUserRequest request) throws Exception {
+    public ResponseEntity<User> createUser(@RequestHeader("Authorization") String jwt, @Valid @RequestBody AdminCreateUserRequest request) throws Exception {
         User user = userService.findUserProfileByJwt(jwt);
         if(user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can add user");

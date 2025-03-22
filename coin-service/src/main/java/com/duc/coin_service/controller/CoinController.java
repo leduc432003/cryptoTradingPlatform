@@ -83,10 +83,9 @@ public class CoinController {
     }
 
     @GetMapping("/trending")
-    ResponseEntity<JsonNode> getTrendingCoin() throws Exception {
-        String coin = coinService.getTrendingCoins();
-        JsonNode jsonNode = objectMapper.readTree(coin);
-        return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    ResponseEntity<List<Coin>> getTrendingCoin(@RequestParam(required = false, defaultValue = "5") int limit) throws Exception {
+        List<Coin> coins = coinService.getTrendingCoins(limit);
+        return new ResponseEntity<>(coins, HttpStatus.OK);
     }
 
     @GetMapping("/global")
