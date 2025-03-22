@@ -3,6 +3,7 @@ package com.duc.wallet_service.controller;
 import com.duc.wallet_service.dto.UserDTO;
 import com.duc.wallet_service.dto.UserRole;
 import com.duc.wallet_service.dto.request.AddBalanceRequest;
+import com.duc.wallet_service.dto.request.HoldBalanceRequest;
 import com.duc.wallet_service.model.Wallet;
 import com.duc.wallet_service.model.WalletTransaction;
 import com.duc.wallet_service.model.WalletTransactionType;
@@ -14,6 +15,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/wallet")
@@ -32,6 +35,36 @@ public class WalletController {
         }
         Wallet wallet = walletService.getWalletByUserId(request.getUserId());
         walletService.addBalance(wallet, request.getMoney(), request.getTransactionType());
+        return new ResponseEntity<>(wallet, HttpStatus.OK);
+    }
+
+    @PostMapping("/hold-balance")
+    public ResponseEntity<Wallet> holdBalance(@RequestHeader("Internal-Service-Token") String internalJwt, @RequestBody HoldBalanceRequest request) throws Exception {
+        if (!internalServiceToken.equals(internalJwt)) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+        Wallet wallet = walletService.getWalletByUserId(request.getUserId());
+        walletService.holdBalance(BigDecimal.valueOf(request.getMoney()), request.getUserId());
+        return new ResponseEntity<>(wallet, HttpStatus.OK);
+    }
+
+    @PostMapping("/release-held-balance")
+    public ResponseEntity<Wallet> releaseHeldBalance(@RequestHeader("Internal-Service-Token") String internalJwt, @RequestBody HoldBalanceRequest request) throws Exception {
+        if (!internalServiceToken.equals(internalJwt)) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+        Wallet wallet = walletService.getWalletByUserId(request.getUserId());
+        walletService.releaseHeldBalance(BigDecimal.valueOf(request.getMoney()), request.getUserId());
+        return new ResponseEntity<>(wallet, HttpStatus.OK);
+    }
+
+    @PostMapping("/commit-held-balance")
+    public ResponseEntity<Wallet> commitHeldBalance(@RequestHeader("Internal-Service-Token") String internalJwt, @RequestBody AddBalanceRequest request) throws Exception {
+        if (!internalServiceToken.equals(internalJwt)) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+        Wallet wallet = walletService.getWalletByUserId(request.getUserId());
+        walletService.commitHeldBalance(BigDecimal.valueOf(request.getMoney()), request.getUserId(), request.getTransactionType());
         return new ResponseEntity<>(wallet, HttpStatus.OK);
     }
 

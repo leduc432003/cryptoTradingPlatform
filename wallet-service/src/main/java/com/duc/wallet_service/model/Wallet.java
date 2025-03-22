@@ -18,4 +18,6 @@ public class Wallet {
     private Long userId;
     @Column(precision = 19, scale = 6)
     private BigDecimal balance;
+    @Column(precision = 19, scale = 6)
+    private BigDecimal heldBalance = BigDecimal.ZERO;
 }

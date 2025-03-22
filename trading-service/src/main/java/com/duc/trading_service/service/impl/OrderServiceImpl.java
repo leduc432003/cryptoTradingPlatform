@@ -3,6 +3,7 @@ package com.duc.trading_service.service.impl;
 import com.duc.trading_service.dto.*;
 import com.duc.trading_service.dto.request.AddBalanceRequest;
 import com.duc.trading_service.dto.request.CreateAssetRequest;
+import com.duc.trading_service.dto.request.HoldBalanceRequest;
 import com.duc.trading_service.model.Orders;
 import com.duc.trading_service.model.OrderItem;
 import com.duc.trading_service.model.OrderStatus;
@@ -34,6 +35,7 @@ public class OrderServiceImpl implements OrderService {
     private String internalServiceToken;
     @Value("${internal1.service.token}")
     private String internal1ServiceToken;
+    private static final String ADMIN_EMAIL = "admin@gmail.com";
 
     @Override
     public Orders getOrderById(Long orderId) throws Exception {
@@ -125,7 +127,7 @@ public class OrderServiceImpl implements OrderService {
             }
             orderItem = orderItemService.createOrderItem(coinId, quantity, updatedAsset.getBuyPrice(), limitPrice.doubleValue());
         } else if (orderType == OrderType.STOP_LIMIT_BUY) {
-            UserDTO admin = userService.getUserByEmail("admin@gmail.com");
+            UserDTO admin = userService.getUserByEmail(ADMIN_EMAIL);
             AssetDTO adminAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coinId, admin.getId());
 
             double maxBuyQuantity = adminAsset.getQuantity() * 0.1;
@@ -138,13 +140,13 @@ public class OrderServiceImpl implements OrderService {
                 throw new Exception("Insufficient balance to place order");
             }
 
+            HoldBalanceRequest holdBalanceRequest = new HoldBalanceRequest();
+            holdBalanceRequest.setMoney(buyPrice.add(transactionFee).doubleValue());
+            holdBalanceRequest.setUserId(userId);
+            walletService.holdBalance(internal1ServiceToken, holdBalanceRequest);
+
             assetService.updateAsset(internalServiceToken, adminAsset.getId(), -quantity);
 
-            AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
-            addBalanceRequest.setMoney(-buyPrice.add(transactionFee).doubleValue());
-            addBalanceRequest.setUserId(userId);
-            addBalanceRequest.setTransactionType(WalletTransactionType.BUY_ASSET);
-            walletService.addBalance(internal1ServiceToken, addBalanceRequest);
             orderItem = orderItemService.createOrderItem(coinId, quantity, limitPrice.doubleValue(), 0);
         }
 
@@ -183,7 +185,7 @@ public class OrderServiceImpl implements OrderService {
             }
             orderItem = orderItemService.createOrderItem(coinId, quantity, updatedAsset.getBuyPrice(), limitPrice.doubleValue());
         } else if (orderType == OrderType.LIMIT_BUY) {
-            UserDTO admin = userService.getUserByEmail("admin@gmail.com");
+            UserDTO admin = userService.getUserByEmail(ADMIN_EMAIL);
             AssetDTO adminAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coinId, admin.getId());
 
             double maxBuyQuantity = adminAsset.getQuantity() * 0.1;
@@ -196,13 +198,13 @@ public class OrderServiceImpl implements OrderService {
                 throw new Exception("Insufficient balance to buy");
             }
 
+            HoldBalanceRequest holdBalanceRequest = new HoldBalanceRequest();
+            holdBalanceRequest.setMoney(buyPrice.add(transactionFee).doubleValue());
+            holdBalanceRequest.setUserId(userId);
+            walletService.holdBalance(internal1ServiceToken, holdBalanceRequest);
+
             assetService.updateAsset(internalServiceToken, adminAsset.getId(), -quantity);
 
-            AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
-            addBalanceRequest.setMoney(-buyPrice.add(transactionFee).doubleValue());
-            addBalanceRequest.setUserId(userId);
-            addBalanceRequest.setTransactionType(WalletTransactionType.BUY_ASSET);
-            walletService.addBalance(internal1ServiceToken, addBalanceRequest);
             orderItem = orderItemService.createOrderItem(coinId, quantity, limitPrice.doubleValue(), 0);
         }
         Orders order = orderRedisService.createOrder(userId, orderItem, orderType);
@@ -228,12 +230,19 @@ public class OrderServiceImpl implements OrderService {
             throw new Exception("Quantity must be greater than 0");
         }
 
-        UserDTO admin = userService.getUserByEmail("admin@gmail.com");
+        UserDTO admin = userService.getUserByEmail(ADMIN_EMAIL);
         double buyPrice = limitOrder.getLimitPrice().doubleValue();
         String coinId = limitOrder.getOrderItem().getCoinId();
         BigDecimal transactionFee = limitOrder.getPrice().subtract(BigDecimal.valueOf(buyPrice * quantity));
 
         limitOrder.setStatus(OrderStatus.SUCCESS);
+
+        AddBalanceRequest addBalanceCustomerRequest = new AddBalanceRequest();
+        addBalanceCustomerRequest.setUserId(limitOrder.getUserId());
+        addBalanceCustomerRequest.setMoney(limitOrder.getPrice().doubleValue());
+        addBalanceCustomerRequest.setTransactionType(WalletTransactionType.BUY_ASSET);
+
+        walletService.commitHeldBalance(internal1ServiceToken, addBalanceCustomerRequest);
 
         AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
         addBalanceRequest.setUserId(admin.getId());
@@ -270,7 +279,7 @@ public class OrderServiceImpl implements OrderService {
         addBalanceRequest.setTransactionType(WalletTransactionType.SELL_ASSET);
         walletService.addBalance(jwt, addBalanceRequest);
 
-        UserDTO admin = userService.getUserByEmail("admin@gmail.com");
+        UserDTO admin = userService.getUserByEmail(ADMIN_EMAIL);
         AssetDTO adminAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, limitOrder.getOrderItem().getCoinId(), admin.getId());
         assetService.updateAsset(internalServiceToken, adminAsset.getId(), limitOrder.getOrderItem().getQuantity());
 
@@ -289,7 +298,7 @@ public class OrderServiceImpl implements OrderService {
             throw new Exception("quantity must be > 0");
         }
 
-        UserDTO admin = userService.getUserByEmail("admin@gmail.com");
+        UserDTO admin = userService.getUserByEmail(ADMIN_EMAIL);
         AssetDTO adminAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coinId, admin.getId());
 
         double maxBuyQuantity = adminAsset.getQuantity() * 0.1;
@@ -372,7 +381,7 @@ public class OrderServiceImpl implements OrderService {
         if (updateAsset.getQuantity() * sellPrice <= 0) {
             assetService.deleteAsset(internalServiceToken, updateAsset.getId());
         }
-        UserDTO admin = userService.getUserByEmail("admin@gmail.com");
+        UserDTO admin = userService.getUserByEmail(ADMIN_EMAIL);
         AssetDTO adminAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coinId, admin.getId());
         assetService.updateAsset(internalServiceToken, adminAsset.getId(), quantity);
 
@@ -397,15 +406,14 @@ public class OrderServiceImpl implements OrderService {
         }
 
         if((order.getOrderType() == OrderType.LIMIT_BUY) || (order.getOrderType() == OrderType.STOP_LIMIT_BUY)) {
-            UserDTO admin = userService.getUserByEmail("admin@gmail.com");
+            UserDTO admin = userService.getUserByEmail(ADMIN_EMAIL);
             AssetDTO adminAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, order.getOrderItem().getCoinId(), admin.getId());
             assetService.updateAsset(internalServiceToken, adminAsset.getId(), order.getOrderItem().getQuantity());
 
-            AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
-            addBalanceRequest.setMoney(order.getPrice().doubleValue());
-            addBalanceRequest.setUserId(userId);
-            addBalanceRequest.setTransactionType(WalletTransactionType.REFUND_BUY_ASSET);
-            walletService.addBalance(internal1ServiceToken, addBalanceRequest);
+            HoldBalanceRequest holdBalanceRequest = new HoldBalanceRequest();
+            holdBalanceRequest.setUserId(userId);
+            holdBalanceRequest.setMoney(order.getPrice().doubleValue());
+            walletService.releaseHeldBalance(internal1ServiceToken, holdBalanceRequest);
         } else if((order.getOrderType() == OrderType.LIMIT_SELL) || (order.getOrderType() == OrderType.STOP_LIMIT_SELL)) {
             AssetDTO oldAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, order.getOrderItem().getCoinId(), userId);
 

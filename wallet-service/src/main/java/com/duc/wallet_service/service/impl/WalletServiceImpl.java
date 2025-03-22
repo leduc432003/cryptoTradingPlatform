@@ -113,4 +113,46 @@ public class WalletServiceImpl implements WalletService {
         }
         return walletRepository.save(wallet);
     }
+
+    @Override
+    public void holdBalance(BigDecimal amount, Long userId) throws Exception {
+        Wallet wallet = walletRepository.findByUserId(userId);
+        if (wallet.getBalance().compareTo(amount) < 0) {
+            throw new Exception("Insufficient balance to hold");
+        }
+        wallet.setBalance(wallet.getBalance().subtract(amount));
+        wallet.setHeldBalance(wallet.getHeldBalance().add(amount));
+        walletRepository.save(wallet);
+    }
+
+    @Override
+    public void releaseHeldBalance(BigDecimal amount, Long userId) throws Exception {
+        Wallet wallet = walletRepository.findByUserId(userId);
+        if (wallet.getHeldBalance().compareTo(amount) < 0) {
+            throw new Exception("Insufficient held balance to release");
+        }
+        wallet.setHeldBalance(wallet.getHeldBalance().subtract(amount));
+        wallet.setBalance(wallet.getBalance().add(amount));
+        walletRepository.save(wallet);
+    }
+
+    @Override
+    public void commitHeldBalance(BigDecimal amount, Long userId, WalletTransactionType transactionType) throws Exception {
+        Wallet wallet = walletRepository.findByUserId(userId);
+        if (wallet.getHeldBalance().compareTo(amount) < 0) {
+            throw new Exception("Insufficient held balance to commit");
+        }
+        wallet.setHeldBalance(wallet.getHeldBalance().subtract(amount));
+        walletTransactionService.createWalletTransaction(wallet, transactionType, null, transactionType.toString(), amount.negate());
+        long buySellCount = walletTransactionService.countBuyAndSellAssetTransactions(wallet.getId());
+        if(buySellCount == 1) {
+            UserDTO userDTO = userService.getUserById(wallet.getUserId());
+            UserDTO referrer = userService.getUserByReferralCode(userDTO.getReferredBy());
+            Wallet walletReferrer = getWalletByUserId(referrer.getId());
+            BigDecimal newBalance1 = walletReferrer.getBalance().add(BigDecimal.valueOf(3));
+            walletReferrer.setBalance(newBalance1);
+            walletTransactionService.createWalletTransaction(walletReferrer, WalletTransactionType.INTRODUCTORY_GIFT, null, "INTRODUCTORY GIFT", BigDecimal.valueOf(3));
+            walletRepository.save(walletReferrer);
+        }
+    }
 }
