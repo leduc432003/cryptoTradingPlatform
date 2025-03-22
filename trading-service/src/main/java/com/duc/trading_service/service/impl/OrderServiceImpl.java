@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -41,11 +42,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<Orders> getAllOrdersOfUser(Long userId, OrderType orderType, String assetSymbol) {
-        List<Orders> ordersList =  orderRepository.findByUserId(userId);
-        return ordersList.stream()
-                .filter(orders -> orderType == null || orders.getOrderType().name().equalsIgnoreCase(orderType.toString()))
-                .filter(order -> assetSymbol == null || order.getOrderItem().getCoinId().equalsIgnoreCase(assetSymbol))
-                .toList();
+        return orderRepository.findOrdersByUserIdAndFilters(userId, orderType, assetSymbol);
     }
 
     @Override
