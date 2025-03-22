@@ -173,7 +173,7 @@ public class UserController {
     }
 
     @PutMapping("/admin/{userId}")
-    public ResponseEntity<User> adminUpdateUser(@RequestHeader("Authorization") String jwt, @PathVariable Long userId, @RequestBody AdminCreateUserRequest request) throws Exception {
+    public ResponseEntity<User> adminUpdateUser(@RequestHeader("Authorization") String jwt, @PathVariable Long userId, @Valid @RequestBody AdminCreateUserRequest request) throws Exception {
         User user = userService.findUserProfileByJwt(jwt);
         if(user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can update user");
