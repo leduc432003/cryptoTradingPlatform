@@ -16,9 +16,9 @@ public interface WalletService {
     @GetMapping("/api/wallet")
     WalletDTO getUserWallet(@RequestHeader("Authorization") String jwt);
     @PostMapping("/api/wallet/hold-balance")
-    WalletDTO holdBalance(@RequestHeader("Internal-Service-Token") String internalJwt, @RequestBody HoldBalanceRequest request) throws Exception;
+    void holdBalance(@RequestHeader("Internal-Service-Token") String internalJwt, @RequestBody HoldBalanceRequest request) throws Exception;
     @PostMapping("/api/wallet/release-held-balance")
-    WalletDTO releaseHeldBalance(@RequestHeader("Internal-Service-Token") String internalJwt, @RequestBody HoldBalanceRequest request) throws Exception;
+    void releaseHeldBalance(@RequestHeader("Internal-Service-Token") String internalJwt, @RequestBody HoldBalanceRequest request) throws Exception;
     @PostMapping("/api/wallet/commit-held-balance")
-    WalletDTO commitHeldBalance(@RequestHeader("Internal-Service-Token") String internalJwt, @RequestBody AddBalanceRequest request) throws Exception;
+    void commitHeldBalance(@RequestHeader("Internal-Service-Token") String internalJwt, @RequestBody AddBalanceRequest request) throws Exception;
 }
