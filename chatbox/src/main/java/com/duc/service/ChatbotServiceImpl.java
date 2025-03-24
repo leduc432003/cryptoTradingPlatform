@@ -3,6 +3,9 @@ package com.duc.service;
 import com.duc.dto.CoinDto;
 import com.duc.response.ApiResponse;
 import com.duc.response.FunctionResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.http.HttpEntity;
@@ -137,11 +140,13 @@ public class ChatbotServiceImpl implements ChatbotService {
                     "1. Đăng nhập vào tài khoản của bạn.\n" +
                     "2. Truy cập vào ví của bạn.\n" +
                     "3. Chọn mục 'Rút tiền' hoặc 'Withdrawal' từ menu.\n" +
-                    "4. Nhập số tiền bạn muốn rút và nhập số tài khoản ngân hàng.\n" +
+                    "4. Nhập số tiền bạn muốn rút và nhập số tài khoản ngân hàng(nếu chưa nhập).\n" +
                     "5. Kiểm tra lại thông tin giao dịch và xác nhận.\n" +
-                    "6. Chờ xác nhận từ admin hoặc hệ thống.\n" +
-                    "7. Hoàn thành giao dịch và nhận tiền vào tài khoản của bạn.";
-            withdrawalStepsResponse.setMessage(withdrawalSteps);
+                    "6. Chờ xác nhận từ admin.\n" +
+                    "7. Hoàn thành giao dịch và nhận tiền vào tài khoản của bạn.\n" +
+                    "Nếu cần hỗ trợ liên hệ email: anhducle4433@gmail.com .\n";
+            String response = simpleChat(withdrawalSteps);
+            withdrawalStepsResponse.setMessage(response);
             return withdrawalStepsResponse;
         } else if (res.getFunctionName().equals("getDepositSteps")) {
             ApiResponse depositStepsResponse = new ApiResponse();
@@ -154,7 +159,8 @@ public class ChatbotServiceImpl implements ChatbotService {
                     "6. Chờ hệ thống xác nhận và hoàn tất giao dịch.\n" +
                     "7. Tiền sẽ được nạp vào tài khoản của bạn. \n" +
                     "Nếu cần hỗ trợ liên hệ email: anhducle4433@gmail.com .\n";
-            depositStepsResponse.setMessage(depositSteps);
+            String response = simpleChat(depositSteps);
+            depositStepsResponse.setMessage(response);
             return depositStepsResponse;
         } else if (res.getFunctionName().equals("getTransactionSteps")) {
             ApiResponse transactionStepsResponse = new ApiResponse();
@@ -163,10 +169,15 @@ public class ChatbotServiceImpl implements ChatbotService {
                     "2. Truy cập vào coin muốn giao dịch.\n" +
                     "3. Chọn 'Giao dịch' hoặc 'Trade'.\n" +
                     "4. Chọn loại giao dịch bạn muốn thực hiện (Mua hoặc Bán).\n" +
-                    "5. Nhập số lượng coin bạn muốn giao dịch và xác nhận.\n" +
-                    "6. Chờ hệ thống xử lý và hoàn tất giao dịch.\n" +
-                    "7. Xem kết quả giao dịch trong tài khoản của bạn.";
-            transactionStepsResponse.setMessage(transactionSteps);
+                    "5. Chọn loại lệnh giao dịch phù hợp:\n" +
+                    "   - **Lệnh Market**: Mua/Bán ngay với giá thị trường hiện tại.\n" +
+                    "   - **Lệnh Limit**: Đặt giá mua/bán mong muốn, lệnh chỉ khớp khi giá thị trường đạt đến mức đó.\n" +
+                    "   - **Lệnh Stop-Limit**: Đặt mức giá kích hoạt (Stop Price), khi đạt mức này, một lệnh Limit sẽ được đặt ra.\n" +
+                    "6. Nhập số lượng coin bạn muốn giao dịch và xác nhận.\n" +
+                    "7. Chờ hệ thống xử lý và hoàn tất giao dịch.\n" +
+                    "8. Xem kết quả giao dịch trong tài khoản của bạn.";
+            String response = simpleChat(transactionSteps);
+            transactionStepsResponse.setMessage(response);
             return transactionStepsResponse;
         }
 
@@ -262,10 +273,11 @@ public class ChatbotServiceImpl implements ChatbotService {
     }
 
     @Override
-    public String simpleChat(String prompt) {
-        String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=" + GEMINI_API_KEY;
+    public String simpleChat(String prompt) throws JsonProcessingException {
+        String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=" + GEMINI_API_KEY;
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        prompt = "Bạn là một trợ lý cho website giao dịch tiền ảo crypto. Đây là dữ liệu bạn cần trả lời: " + prompt + " .Hãy trả lời khách hàng một cách thật tự nhiên và thân thiện.";
         String requestBody = new JSONObject()
                 .put("contents", new JSONArray()
                         .put(new JSONObject()
@@ -276,7 +288,17 @@ public class ChatbotServiceImpl implements ChatbotService {
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> response = restTemplate.postForEntity(GEMINI_API_URL, requestEntity, String.class);
-        return response.getBody();
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode rootNode = objectMapper.readTree(response.getBody());
+
+        String text = rootNode.path("candidates")
+                .get(0)
+                .path("content")
+                .path("parts")
+                .get(0)
+                .path("text")
+                .asText();
+        return text;
     }
 
     public FunctionResponse getFunctionResponse(String prompt) {
