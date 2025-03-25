@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 
@@ -45,8 +46,9 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<Orders> getAllOrdersOfUser(Long userId, OrderType orderType, String assetSymbol) {
-        return orderRepository.findOrdersByUserIdAndFilters(userId, orderType, assetSymbol);
+    public List<Orders> getAllOrdersOfUser(Long userId, OrderType orderType, String assetSymbol, Integer days) {
+        LocalDateTime startDate = (days != null) ? LocalDateTime.now().minusDays(days) : null;
+        return orderRepository.findOrdersByUserIdAndFilters(userId, orderType, assetSymbol, startDate);
     }
 
     @Override

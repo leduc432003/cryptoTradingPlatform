@@ -52,14 +52,17 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Orders>> getAllOrdersForUser(@RequestHeader("Authorization") String jwt, @RequestParam(required = false) OrderType order_type, @RequestParam(required = false) String asset_symbol) throws Exception {
+    public ResponseEntity<List<Orders>> getAllOrdersForUser(@RequestHeader("Authorization") String jwt,
+                                                            @RequestParam(required = false) OrderType order_type,
+                                                            @RequestParam(required = false) String asset_symbol,
+                                                            @RequestParam(required = false) Integer days) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
-        List<Orders> orderList = orderService.getAllOrdersOfUser(user.getId(), order_type, asset_symbol);
+        List<Orders> orderList = orderService.getAllOrdersOfUser(user.getId(), order_type, asset_symbol, days);
         return new ResponseEntity<>(orderList, HttpStatus.OK);
     }
 
     @GetMapping("/pending")
-    public ResponseEntity<List<Orders>> getAllOrdersForUser(@RequestHeader("Authorization") String jwt) throws Exception {
+    public ResponseEntity<List<Orders>> getAllPendingOrdersForUser(@RequestHeader("Authorization") String jwt) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         List<Orders> orderList = orderService.getOrdersByStatus(user.getId(), OrderStatus.PENDING);
         return new ResponseEntity<>(orderList, HttpStatus.OK);
