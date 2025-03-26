@@ -9,4 +9,5 @@ public interface PaymentService {
     Payment createPaymentRequest(Long userId, BigDecimal amount) throws Exception;
     boolean checkPaymentStatus(Long paymentId) throws Exception;
     List<Payment> getPayments(Long userId) throws Exception;
+    Payment getPaymentById(Long userId, Long paymentId) throws Exception;
 }

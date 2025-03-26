@@ -139,6 +139,21 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentRepository.findByUserId(userId);
     }
 
+    @Override
+    public Payment getPaymentById(Long userId, Long paymentId) throws Exception {
+        Optional<Payment> paymentOptional = paymentRepository.findById(paymentId);
+        if (paymentOptional.isEmpty()) {
+            throw new Exception("Payment not found");
+        }
+
+        Payment payment = paymentOptional.get();
+        if (!payment.getUserId().equals(userId)) {
+            throw new Exception("You are not authorized to view this payment");
+        }
+
+        return payment;
+    }
+
     private String generateQrLink(Long userId, BigDecimal amount, String content) {
         return String.format("https://qr.sepay.vn/img?acc=%s&bank=%s&amount=%s&des=%s",
                 "0972024254", "MBBank", amount, content);

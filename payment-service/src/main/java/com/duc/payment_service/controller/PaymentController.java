@@ -29,6 +29,13 @@ public class PaymentController {
         return new ResponseEntity<>(payment, HttpStatus.CREATED);
     }
 
+    @GetMapping("/{paymentId}")
+    public ResponseEntity<Payment> getPaymentById(@RequestHeader("Authorization") String jwt, @PathVariable Long paymentId) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        Payment payment = paymentService.getPaymentById(user.getId(), paymentId);
+        return new ResponseEntity<>(payment, HttpStatus.OK);
+    }
+
     @PutMapping("/check/{paymentId}")
     public ResponseEntity<Map<String, String>> checkPaymentStatus(@RequestHeader("Authorization") String jwt, @PathVariable Long paymentId) {
         try {
