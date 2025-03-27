@@ -12,7 +12,7 @@ import java.util.List;
 
 public interface OrderService {
     Orders getOrderById(Long orderId) throws Exception;
-    List<Orders> getAllOrdersOfUser(Long userId, OrderType orderType, String assetSymbol, Integer days);
+    List<Orders> getAllOrdersOfUser(Long userId, OrderType orderType, String assetSymbol, Integer days, OrderStatus status);
     void cancelLimitOrder(Long orderId, Long userId) throws Exception;
     Orders processOrder(String coinId, double quantity, BigDecimal stopPrice, BigDecimal limitPrice, OrderType orderType, Long userId, String jwt) throws Exception;
     void matchOrdersWithPrice(String symbol, BigDecimal currentPrice);

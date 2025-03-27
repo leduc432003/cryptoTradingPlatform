@@ -21,11 +21,12 @@ public interface OrderRepository extends JpaRepository<Orders, Long> {
     Page<Orders> findAll(Pageable pageable);
     @Query("SELECT o FROM Orders o WHERE o.userId = :userId " +
             "AND (:orderType IS NULL OR o.orderType = :orderType) " +
-            "AND (:assetSymbol IS NULL OR o.orderItem.coinId = :assetSymbol) " +
+            "AND (:assetSymbol IS NULL OR o.tradingSymbol = :assetSymbol) " +
             "AND (:startDate IS NULL OR o.timestamp >= :startDate) " +
-            "ORDER BY o.timestamp DESC")
+            "AND (:status IS NULL OR o.status = :status)")
     List<Orders> findOrdersByUserIdAndFilters(@Param("userId") Long userId,
                                               @Param("orderType") OrderType orderType,
                                               @Param("assetSymbol") String assetSymbol,
-                                              @Param("startDate") LocalDateTime startDate);
+                                              @Param("startDate") LocalDateTime startDate,
+                                              @Param("status") OrderStatus status);
 }

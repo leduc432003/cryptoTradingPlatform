@@ -55,9 +55,10 @@ public class OrderController {
     public ResponseEntity<List<Orders>> getAllOrdersForUser(@RequestHeader("Authorization") String jwt,
                                                             @RequestParam(required = false) OrderType order_type,
                                                             @RequestParam(required = false) String asset_symbol,
-                                                            @RequestParam(required = false) Integer days) throws Exception {
+                                                            @RequestParam(required = false) Integer days,
+                                                            @RequestParam(required = false) OrderStatus status) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
-        List<Orders> orderList = orderService.getAllOrdersOfUser(user.getId(), order_type, asset_symbol, days);
+        List<Orders> orderList = orderService.getAllOrdersOfUser(user.getId(), order_type, asset_symbol, days, status);
         return new ResponseEntity<>(orderList, HttpStatus.OK);
     }
 

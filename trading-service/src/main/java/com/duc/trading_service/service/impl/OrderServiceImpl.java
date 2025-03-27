@@ -46,9 +46,9 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<Orders> getAllOrdersOfUser(Long userId, OrderType orderType, String assetSymbol, Integer days) {
+    public List<Orders> getAllOrdersOfUser(Long userId, OrderType orderType, String assetSymbol, Integer days, OrderStatus status) {
         LocalDateTime startDate = (days != null) ? LocalDateTime.now().minusDays(days) : null;
-        return orderRepository.findOrdersByUserIdAndFilters(userId, orderType, assetSymbol, startDate);
+        return orderRepository.findOrdersByUserIdAndFilters(userId, orderType, assetSymbol, startDate, status);
     }
 
     @Override
