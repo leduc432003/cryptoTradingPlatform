@@ -82,17 +82,20 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
-    public boolean checkPaymentStatus(Long paymentId) throws Exception {
+    public boolean checkPaymentStatus(Long paymentId, Long userId) throws Exception {
         Optional<Payment> paymentOptional = paymentRepository.findById(paymentId);
         if (!paymentOptional.isPresent()) {
             throw new IllegalArgumentException("Payment not found");
         }
 
-        if (paymentOptional.get().getStatus() != PaymentStatus.PENDING) {
-            return false;
+        Payment payment = paymentOptional.get();
+        if (!payment.getUserId().equals(userId)) {
+            throw new SecurityException("Unauthorized access to this payment");
+        }
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            return payment.getStatus() == PaymentStatus.SUCCESS;
         }
 
-        Payment payment = paymentOptional.get();
         BigDecimal amountInVnd = payment.getAmountInVnd();
         BigDecimal amount = payment.getAmount();
         String qrContent = payment.getContent().toUpperCase().replace("-", "");

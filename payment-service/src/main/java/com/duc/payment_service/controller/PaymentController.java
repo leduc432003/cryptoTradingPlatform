@@ -38,8 +38,9 @@ public class PaymentController {
 
     @PutMapping("/check/{paymentId}")
     public ResponseEntity<Map<String, String>> checkPaymentStatus(@RequestHeader("Authorization") String jwt, @PathVariable Long paymentId) {
+        UserDTO user = userService.getUserProfile(jwt);
         try {
-            boolean isSuccessful = paymentService.checkPaymentStatus(paymentId);
+            boolean isSuccessful = paymentService.checkPaymentStatus(paymentId, user.getId());
             PaymentStatus status = isSuccessful ? PaymentStatus.SUCCESS : PaymentStatus.FAILED;
             return ResponseEntity.ok(Map.of("status", status.toString()));
         } catch (Exception e) {
