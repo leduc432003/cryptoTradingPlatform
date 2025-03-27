@@ -17,5 +17,5 @@ public interface OrderService {
     Orders processOrder(String coinId, double quantity, BigDecimal stopPrice, BigDecimal limitPrice, OrderType orderType, Long userId, String jwt) throws Exception;
     void matchOrdersWithPrice(String symbol, BigDecimal currentPrice);
     List<Orders> getOrdersByStatus(Long userId, OrderStatus status);
-    Page<Orders> getAllOrders(Pageable pageable);
+    Page<Orders> getAllOrders(OrderType orderType, String assetSymbol, Integer days, OrderStatus status, Pageable pageable);
 }

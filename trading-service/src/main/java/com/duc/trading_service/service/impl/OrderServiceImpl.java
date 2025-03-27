@@ -118,8 +118,9 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Page<Orders> getAllOrders(Pageable pageable) {
-        return orderRepository.findAll(pageable);
+    public Page<Orders> getAllOrders(OrderType orderType, String assetSymbol, Integer days, OrderStatus status, Pageable pageable) {
+        LocalDateTime startDate = (days != null) ? LocalDateTime.now().minusDays(days) : null;
+        return orderRepository.findAllWithFilters(orderType, assetSymbol, startDate, status, pageable);
     }
 
     @Transactional

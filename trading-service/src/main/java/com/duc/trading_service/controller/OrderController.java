@@ -90,7 +90,11 @@ public class OrderController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String order
+            @RequestParam(defaultValue = "asc") String order,
+            @RequestParam(required = false) OrderType order_type,
+            @RequestParam(required = false) String asset_symbol,
+            @RequestParam(required = false) Integer days,
+            @RequestParam(required = false) OrderStatus status
     ) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         if (user.getRole() != UserRole.ROLE_ADMIN) {
@@ -99,9 +103,10 @@ public class OrderController {
 
         Sort sort = order.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Orders> orderPage = orderService.getAllOrders(pageable);
 
-        return new ResponseEntity<>(orderPage, HttpStatus.OK);
+        Page<Orders> orderPage = orderService.getAllOrders(order_type, asset_symbol, days, status, pageable);
+
+        return ResponseEntity.ok(orderPage);
     }
 
     @GetMapping("/admin/total-transactions-range")
