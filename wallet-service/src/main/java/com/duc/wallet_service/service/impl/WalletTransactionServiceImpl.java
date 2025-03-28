@@ -1,13 +1,9 @@
 package com.duc.wallet_service.service.impl;
 
-import com.duc.wallet_service.dto.UserDTO;
 import com.duc.wallet_service.model.Wallet;
 import com.duc.wallet_service.model.WalletTransaction;
 import com.duc.wallet_service.model.WalletTransactionType;
-import com.duc.wallet_service.repository.WalletRepository;
 import com.duc.wallet_service.repository.WalletTransactionRepository;
-import com.duc.wallet_service.service.UserService;
-import com.duc.wallet_service.service.WalletService;
 import com.duc.wallet_service.service.WalletTransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -51,15 +47,16 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
     }
 
     @Override
-    public List<WalletTransaction> getWalletTransactionsByWalletIdAndDays(Long walletId, Long days) {
-        if (days == null) {
-            LocalDate endDate = LocalDate.now();
-            LocalDate startDate = LocalDate.MIN;
+    public List<WalletTransaction> getWalletTransactionsByWalletIdAndDaysAndType(Long walletId, Long days, WalletTransactionType transactionType) {
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = (days == null) ? LocalDate.MIN : endDate.minusDays(days);
+
+        if (transactionType == null) {
             return walletTransactionRepository.findAllByWalletIdAndDateBetween(walletId, startDate, endDate);
         }
-        LocalDate endDate = LocalDate.now();
-        LocalDate startDate = endDate.minusDays(days);
-        return walletTransactionRepository.findAllByWalletIdAndDateBetween(walletId, startDate, endDate);
+
+        return walletTransactionRepository.findAllByWalletIdAndDateBetweenAndType(
+                walletId, startDate, endDate, transactionType);
     }
 
     @Override

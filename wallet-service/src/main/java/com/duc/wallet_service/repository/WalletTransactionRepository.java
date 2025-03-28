@@ -22,6 +22,16 @@ public interface WalletTransactionRepository extends JpaRepository<WalletTransac
             @Param("endDate") LocalDate endDate,
             @Param("transactionTypes") List<WalletTransactionType> transactionTypes);
 
+    @Query("SELECT w FROM WalletTransaction w WHERE w.wallet.id = :walletId " +
+            "AND w.date BETWEEN :startDate AND :endDate " +
+            "AND w.walletTransactionType = :transactionType " +
+            "ORDER BY w.id DESC")
+    List<WalletTransaction> findAllByWalletIdAndDateBetweenAndType(
+            @Param("walletId") Long walletId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("transactionType") WalletTransactionType transactionType);
+
     @Query("SELECT w FROM WalletTransaction w WHERE w.wallet.id = :walletId AND w.date BETWEEN :startDate AND :endDate ORDER BY w.id DESC")
     List<WalletTransaction> findAllByWalletIdAndDateBetween(
             @Param("walletId") Long walletId,

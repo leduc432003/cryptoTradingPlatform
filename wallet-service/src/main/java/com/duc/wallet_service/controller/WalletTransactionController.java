@@ -28,10 +28,12 @@ public class WalletTransactionController {
     @GetMapping
     public ResponseEntity<List<WalletTransaction>> getUserWalletTransaction(
             @RequestHeader("Authorization") String jwt,
-            @RequestParam(value = "days", required = false) Long days) {
+            @RequestParam(value = "days", required = false) Long days,
+            @RequestParam(value = "transaction_type", required = false) WalletTransactionType transactionType) {
         UserDTO user = userService.getUserProfile(jwt);
         Wallet wallet = walletService.getWalletByUserId(user.getId());
-        List<WalletTransaction> walletTransactions = walletTransactionService.getWalletTransactionsByWalletIdAndDays(wallet.getId(), days);
+        List<WalletTransaction> walletTransactions = walletTransactionService.getWalletTransactionsByWalletIdAndDaysAndType(
+                wallet.getId(), days, transactionType);
         return new ResponseEntity<>(walletTransactions, HttpStatus.OK);
     }
 
@@ -39,13 +41,15 @@ public class WalletTransactionController {
     public ResponseEntity<List<WalletTransaction>> getUserWalletTransactionAdmin(
             @RequestHeader("Authorization") String jwt,
             @PathVariable Long userId,
-            @RequestParam(value = "days", required = false) Long days) throws Exception {
+            @RequestParam(value = "days", required = false) Long days,
+            @RequestParam(value = "transaction_type", required = false) WalletTransactionType transactionType) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         if (user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can see wallet user");
         }
         Wallet wallet = walletService.getWalletByUserId(userId);
-        List<WalletTransaction> walletTransactions = walletTransactionService.getWalletTransactionsByWalletIdAndDays(wallet.getId(), days);
+        List<WalletTransaction> walletTransactions = walletTransactionService.getWalletTransactionsByWalletIdAndDaysAndType(
+                wallet.getId(), days, transactionType);
         return new ResponseEntity<>(walletTransactions, HttpStatus.OK);
     }
 
