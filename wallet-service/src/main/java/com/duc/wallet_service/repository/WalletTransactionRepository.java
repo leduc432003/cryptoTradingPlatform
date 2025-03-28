@@ -15,9 +15,17 @@ import java.util.List;
 public interface WalletTransactionRepository extends JpaRepository<WalletTransaction, Long> {
     WalletTransaction findByWalletId(Long walletId);
     List<WalletTransaction> findAllByWalletId(Long walletId);
-    @Query("SELECT w FROM WalletTransaction w WHERE w.date BETWEEN :startDate AND :endDate AND (:transactionTypes IS NULL OR w.walletTransactionType IN :transactionTypes)")
-    List<WalletTransaction> findAllByDateBetweenAndTransactionTypes(@Param("startDate") LocalDate startDate,
-                                                                    @Param("endDate") LocalDate endDate,
-                                                                    @Param("transactionTypes") List<WalletTransactionType> transactionTypes);
+
+    @Query("SELECT w FROM WalletTransaction w WHERE w.date BETWEEN :startDate AND :endDate AND (:transactionTypes IS NULL OR w.walletTransactionType IN :transactionTypes) ORDER BY w.id DESC")
+    List<WalletTransaction> findAllByDateBetweenAndTransactionTypes(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("transactionTypes") List<WalletTransactionType> transactionTypes);
+
+    @Query("SELECT w FROM WalletTransaction w WHERE w.wallet.id = :walletId AND w.date BETWEEN :startDate AND :endDate ORDER BY w.id DESC")
+    List<WalletTransaction> findAllByWalletIdAndDateBetween(
+            @Param("walletId") Long walletId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
     long countByWallet_IdAndWalletTransactionTypeIn(Long walletId, WalletTransactionType[] walletTransactionTypes);
 }

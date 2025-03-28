@@ -51,6 +51,18 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
     }
 
     @Override
+    public List<WalletTransaction> getWalletTransactionsByWalletIdAndDays(Long walletId, Long days) {
+        if (days == null) {
+            LocalDate endDate = LocalDate.now();
+            LocalDate startDate = LocalDate.MIN;
+            return walletTransactionRepository.findAllByWalletIdAndDateBetween(walletId, startDate, endDate);
+        }
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(days);
+        return walletTransactionRepository.findAllByWalletIdAndDateBetween(walletId, startDate, endDate);
+    }
+
+    @Override
     public List<WalletTransaction> getTransactionsByFilters(LocalDate startDate, LocalDate endDate, List<WalletTransactionType> transactionTypes) {
         if (startDate == null || endDate == null) {
             throw new IllegalArgumentException("Start date and end date must not be null");

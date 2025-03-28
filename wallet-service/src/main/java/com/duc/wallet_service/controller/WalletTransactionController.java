@@ -26,38 +26,52 @@ public class WalletTransactionController {
     private final WalletTransactionService walletTransactionService;
 
     @GetMapping
-    public ResponseEntity<List<WalletTransaction>> getUserWalletTransaction(@RequestHeader("Authorization") String jwt) {
+    public ResponseEntity<List<WalletTransaction>> getUserWalletTransaction(
+            @RequestHeader("Authorization") String jwt,
+            @RequestParam(value = "days", required = false) Long days) {
         UserDTO user = userService.getUserProfile(jwt);
         Wallet wallet = walletService.getWalletByUserId(user.getId());
-        List<WalletTransaction> walletTransactions = walletTransactionService.getWalletTransactionService(wallet.getId());
+        List<WalletTransaction> walletTransactions = walletTransactionService.getWalletTransactionsByWalletIdAndDays(wallet.getId(), days);
         return new ResponseEntity<>(walletTransactions, HttpStatus.OK);
     }
 
     @GetMapping("/admin/{userId}")
-    public ResponseEntity<List<WalletTransaction>> getUserWalletTransactionAdmin(@RequestHeader("Authorization") String jwt, @PathVariable Long userId) throws Exception {
+    public ResponseEntity<List<WalletTransaction>> getUserWalletTransactionAdmin(
+            @RequestHeader("Authorization") String jwt,
+            @PathVariable Long userId,
+            @RequestParam(value = "days", required = false) Long days) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
-        if(user.getRole() != UserRole.ROLE_ADMIN) {
+        if (user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can see wallet user");
         }
         Wallet wallet = walletService.getWalletByUserId(userId);
-        return new ResponseEntity<>(walletTransactionService.getWalletTransactionService(wallet.getId()), HttpStatus.OK);
+        List<WalletTransaction> walletTransactions = walletTransactionService.getWalletTransactionsByWalletIdAndDays(wallet.getId(), days);
+        return new ResponseEntity<>(walletTransactions, HttpStatus.OK);
     }
 
     @GetMapping("/admin/transaction")
-    public ResponseEntity<List<WalletTransaction>> getAllTransaction(@RequestHeader("Authorization") String jwt,
-                                                                     @RequestParam(value = "start_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-                                                                     @RequestParam(value = "end_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-                                                                     @RequestParam(value = "transaction_type", required = false) List<WalletTransactionType> transactionTypes) throws Exception {
+    public ResponseEntity<List<WalletTransaction>> getAllTransaction(
+            @RequestHeader("Authorization") String jwt,
+            @RequestParam(value = "start_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(value = "end_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(value = "transaction_type", required = false) List<WalletTransactionType> transactionTypes,
+            @RequestParam(value = "days", required = false) Long days) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
-        if(user.getRole() != UserRole.ROLE_ADMIN) {
+        if (user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can see wallet user");
         }
 
-        if (startDate == null) {
-            startDate = LocalDate.MIN;
-        }
-        if (endDate == null) {
-            endDate = LocalDate.now();
+        if (days != null) {
+            LocalDate endDateNow = LocalDate.now();
+            startDate = endDateNow.minusDays(days);
+            endDate = endDateNow;
+        } else {
+            if (startDate == null) {
+                startDate = LocalDate.MIN;
+            }
+            if (endDate == null) {
+                endDate = LocalDate.now();
+            }
         }
 
         List<WalletTransaction> walletTransactionList = walletTransactionService.getTransactionsByFilters(startDate, endDate, transactionTypes);
