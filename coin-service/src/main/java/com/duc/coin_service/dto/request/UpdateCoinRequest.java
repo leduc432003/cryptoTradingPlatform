@@ -11,5 +11,4 @@ public class UpdateCoinRequest {
     private double minimumBuyPrice;
     private double transactionFee;
     private Long totalSupply;
-    private String tradingSymbol;
 }

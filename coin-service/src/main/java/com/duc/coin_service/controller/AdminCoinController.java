@@ -27,7 +27,7 @@ public class AdminCoinController {
         if(user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can add coin");
         }
-        Coin newCoin = coinService.addCoin(request.getCoinId(), request.getMinimumBuyPrice(), request.getTransactionFee(), request.getTradingSymbol());
+        Coin newCoin = coinService.addCoin(request.getCoinId(), request.getMinimumBuyPrice(), request.getTransactionFee());
         return new ResponseEntity<>(newCoin, HttpStatus.CREATED);
     }
 
@@ -37,7 +37,7 @@ public class AdminCoinController {
         if(user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can update coin");
         }
-        Coin newCoin = coinService.updateCoin(coinId, request.getMinimumBuyPrice(), request.getTransactionFee(), request.getTotalSupply(), request.getTradingSymbol());
+        Coin newCoin = coinService.updateCoin(coinId, request.getMinimumBuyPrice(), request.getTransactionFee(), request.getTotalSupply());
         return new ResponseEntity<>(newCoin, HttpStatus.OK);
     }
 

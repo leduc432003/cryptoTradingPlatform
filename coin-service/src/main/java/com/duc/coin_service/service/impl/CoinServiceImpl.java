@@ -423,7 +423,7 @@ public class CoinServiceImpl implements CoinService {
     }
 
     @Override
-    public Coin addCoin(String coinId, double minimumBuyPrice, double transactionFee, String tradingSymbol) throws Exception {
+    public Coin addCoin(String coinId, double minimumBuyPrice, double transactionFee) throws Exception {
         if(coinRepository.existsById(coinId)) {
             throw new Exception(coinId + " already exists");
         }
@@ -514,7 +514,7 @@ public class CoinServiceImpl implements CoinService {
 
             coin.setMinimumBuyPrice(BigDecimal.valueOf(minimumBuyPrice));
             coin.setTransactionFee(BigDecimal.valueOf(transactionFee));
-            coin.setTradingSymbol(tradingSymbol);
+            coin.setTradingSymbol(coin.getSymbol() + "usdt");
 
             return coinRepository.save(coin);
         } catch (HttpClientErrorException | HttpServerErrorException e) {
@@ -523,7 +523,7 @@ public class CoinServiceImpl implements CoinService {
     }
 
     @Override
-    public Coin updateCoin(String coinId, double minimumBuyPrice, double transactionFee, Long totalSupply, String tradingSymbol) throws Exception {
+    public Coin updateCoin(String coinId, double minimumBuyPrice, double transactionFee, Long totalSupply) throws Exception {
         if (minimumBuyPrice <= 0) {
             throw new Exception("Minimum buy price must be greater than 0");
         }
@@ -534,9 +534,9 @@ public class CoinServiceImpl implements CoinService {
         Coin coin = findById(coinId);
         coin.setMinimumBuyPrice(BigDecimal.valueOf(minimumBuyPrice));
         coin.setTransactionFee(BigDecimal.valueOf(transactionFee));
-        coin.setTradingSymbol(tradingSymbol);
+        coin.setTradingSymbol(coin.getSymbol() + "usdt");
 
-        if(totalSupply != null) {
+        if(totalSupply != null && totalSupply > 0) {
             UserDTO admin = userService.getUserByEmail(ADMIN_EMAIL);
 
             AssetDTO oldAsset = assetService.getAssetByUserIdAndCoinIdInternal(internalServiceToken, coin.getId(), admin.getId());
