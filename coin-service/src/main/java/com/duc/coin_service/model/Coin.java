@@ -34,6 +34,8 @@ public class Coin {
     private long marketCap;
     @JsonProperty("market_cap_rank")
     private int marketCapRank;
+    @JsonProperty("circulating_supply")
+    private long circulatingSupply;
     @JsonProperty("fully_diluted_valuation")
     private long fullyDilutedValuation;
     @JsonProperty("total_volume")
