@@ -26,12 +26,12 @@ This project is a microservices-based cryptocurrency trading platform. It includ
 - **MySQL**
 - **Lombok**
 - **OpenFeign**
+- **Kafka**
 - **Redis**
 
 ## Microservices
 ### 1. User Service
 - Manages user authentication and authorization.
-- Allows Google and Facebook sign-up.
 - Stores user details securely.
 
 ### 2. Coin Service
