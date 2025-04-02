@@ -67,49 +67,49 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void matchOrdersWithPrice(String symbol, BigDecimal currentPrice) {
-        // Lấy danh sách orders từ Redis
         List<Orders> ordersList = orderRedisService.getOrderByStatusAndTradingSymbol(OrderStatus.PENDING, symbol.toLowerCase());
-
         if (ordersList == null || ordersList.isEmpty()) {
-            return; // Thoát sớm nếu không có order nào
+            return;
         }
 
-        // Sử dụng Stream để xử lý song song và lọc sớm
-        ordersList.parallelStream()
-                .filter(order -> order.getOrderItem() != null) // Lọc các order có orderItem hợp lệ
-                .forEach(order -> {
-                    try {
-                        OrderType orderType = order.getOrderType();
-                        BigDecimal stopPrice = order.getStopPrice();
-                        BigDecimal limitPrice = order.getLimitPrice();
+        for (Orders order : ordersList) {
+            if (order.getOrderItem() == null) {
+                continue;
+            }
+            try {
+                OrderType orderType = order.getOrderType();
+                BigDecimal stopPrice = order.getStopPrice();
+                BigDecimal limitPrice = order.getLimitPrice();
 
-                        // Xử lý Stop Limit Orders
-                        if (orderType == OrderType.STOP_LIMIT_BUY && currentPrice.compareTo(stopPrice) >= 0) {
-                            orderRedisService.updateOrderType(order, OrderType.LIMIT_BUY);
-                            return;
-                        } else if (orderType == OrderType.STOP_LIMIT_SELL && currentPrice.compareTo(stopPrice) <= 0) {
-                            orderRedisService.updateOrderType(order, OrderType.LIMIT_SELL);
-                            return;
-                        }
+                if (orderType == OrderType.STOP_LIMIT_BUY && currentPrice.compareTo(stopPrice) >= 0) {
+                    order.setOrderType(OrderType.LIMIT_BUY);
+                    orderRepository.save(order);
+                    orderRedisService.updateOrderType(order, OrderType.LIMIT_BUY);
+                } else if (orderType == OrderType.STOP_LIMIT_SELL && currentPrice.compareTo(stopPrice) <= 0) {
+                    order.setOrderType(OrderType.LIMIT_SELL);
+                    orderRepository.save(order);
+                    orderRedisService.updateOrderType(order, OrderType.LIMIT_SELL);
+                }
 
-                        // Xử lý Limit Orders
-                        boolean isLimitBuyMatch = orderType == OrderType.LIMIT_BUY && currentPrice.compareTo(limitPrice) <= 0;
-                        boolean isLimitSellMatch = orderType == OrderType.LIMIT_SELL && currentPrice.compareTo(limitPrice) >= 0;
+                boolean isLimitBuyMatch = orderType == OrderType.LIMIT_BUY && currentPrice.compareTo(limitPrice) <= 0;
+                boolean isLimitSellMatch = orderType == OrderType.LIMIT_SELL && currentPrice.compareTo(limitPrice) >= 0;
 
-                        if (isLimitBuyMatch || isLimitSellMatch) {
-                            if (isLimitBuyMatch) {
-                                buyAssetForLimitOrder(order, internal1ServiceToken);
-                            } else {
-                                sellAssetForLimitOrder(order, internal1ServiceToken);
-                            }
-                            orderRedisService.updateOrderStatus(order, OrderStatus.SUCCESS);
-                        }
-                    } catch (Exception e) {
-                        // Logging thay vì in stack trace
-                        log.error("Failed to match order {} for symbol {}: {}", order.getId(), symbol, e.getMessage());
-                        // Có thể thêm logic retry hoặc đánh dấu order thất bại tùy yêu cầu
+                if (isLimitBuyMatch || isLimitSellMatch) {
+                    if (isLimitBuyMatch) {
+                        buyAssetForLimitOrder(order, internal1ServiceToken);
+                    } else {
+                        sellAssetForLimitOrder(order, internal1ServiceToken);
                     }
-                });
+                    order.setStatus(OrderStatus.SUCCESS);
+                    orderRepository.save(order);
+                    orderRedisService.updateOrderStatus(order, OrderStatus.SUCCESS);
+                    log.info("Khớp lệnh {}: loại={}, mã={}, giá={}",
+                            order.getId(), orderType, symbol, currentPrice);
+                }
+            } catch (Exception e) {
+                log.error("Không thể khớp lệnh {} cho mã {}: {}", order.getId(), symbol, e.getMessage());
+            }
+        }
     }
 
     @Override
