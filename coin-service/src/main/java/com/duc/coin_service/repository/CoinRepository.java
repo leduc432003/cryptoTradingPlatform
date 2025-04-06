@@ -18,4 +18,6 @@ public interface CoinRepository extends JpaRepository<Coin, String> {
     List<String> findAllTradingSymbols();
     List<Coin> findBySymbolContainingIgnoreCase(String keyword);
     List<Coin> findByNameContainingIgnoreCase(String keyword);
+    @Query("SELECT c.id FROM Coin c WHERE c.name = :name")
+    String findIdByName(String name);
 }

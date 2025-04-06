@@ -6,6 +6,7 @@ import com.duc.response.FunctionResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.http.HttpEntity;
@@ -23,9 +24,10 @@ import java.util.Date;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class ChatbotServiceImpl implements ChatbotService {
-
-    String GEMINI_API_KEY = "AIzaSyCoyHSK_si1TBs12HEOoqr09xH_0qn-GvY";
+    private final CoinService coinService;
+    private static final String GEMINI_API_KEY = "AIzaSyCoyHSK_si1TBs12HEOoqr09xH_0qn-GvY";
 
     private double convertToDouble(Object value) {
         if (value == null) return 0.0;
@@ -181,7 +183,8 @@ public class ChatbotServiceImpl implements ChatbotService {
             return transactionStepsResponse;
         }
 
-        CoinDto apiResponse = makeApiRequest(res.getCurrencyName().toLowerCase());
+        String coinId = coinService.getCoinId(res.getCurrencyName().toLowerCase());
+        CoinDto apiResponse = makeApiRequest(coinId);
         String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_API_KEY;
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

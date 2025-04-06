@@ -142,4 +142,8 @@ public class CoinController {
         List<String> tradingSymbols = coinService.getTradingSymbols();
         return ResponseEntity.ok(tradingSymbols);
     }
+    @GetMapping("/get-coin-id")
+    public String getCoinId(@RequestParam String name) {
+        return coinService.getCoinIdByName(name);
+    }
 }

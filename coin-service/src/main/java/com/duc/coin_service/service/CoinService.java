@@ -29,4 +29,5 @@ public interface CoinService {
     List<String> getTradingSymbols();
     Coin updateIsDelistedStatus(String id, boolean isDelisted);
     List<Coin> getDelistedCoins();
+    String getCoinIdByName(String name);
 }

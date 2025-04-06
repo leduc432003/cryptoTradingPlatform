@@ -590,6 +590,11 @@ public class CoinServiceImpl implements CoinService {
     }
 
     @Override
+    public String getCoinIdByName(String name) {
+        return coinRepository.findIdByName(name);
+    }
+
+    @Override
     public List<Coin> getNewCoins() {
         return coinRepository.findByIsNewTrue();
     }
