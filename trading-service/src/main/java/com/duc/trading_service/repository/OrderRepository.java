@@ -32,11 +32,12 @@ public interface OrderRepository extends JpaRepository<Orders, Long> {
             "AND (:orderType IS NULL OR o.orderType = :orderType) " +
             "AND (:assetSymbol IS NULL OR o.tradingSymbol = :assetSymbol) " +
             "AND (:startDate IS NULL OR o.timestamp >= :startDate) " +
-            "AND (:status IS NULL OR o.status = :status) " +
-            "ORDER BY o.timestamp DESC")
-    List<Orders> findOrdersByUserIdAndFilters(@Param("userId") Long userId,
-                                              @Param("orderType") OrderType orderType,
-                                              @Param("assetSymbol") String assetSymbol,
-                                              @Param("startDate") LocalDateTime startDate,
-                                              @Param("status") OrderStatus status);
+            "AND (:status IS NULL OR o.status = :status)")
+    Page<Orders> findOrdersByUserIdAndFilters(
+            @Param("userId") Long userId,
+            @Param("orderType") OrderType orderType,
+            @Param("assetSymbol") String assetSymbol,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("status") OrderStatus status,
+            Pageable pageable);
 }

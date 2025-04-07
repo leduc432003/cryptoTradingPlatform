@@ -6,6 +6,8 @@ import com.duc.user_service.model.*;
 import com.duc.user_service.repository.UserRepository;
 import com.duc.user_service.service.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -146,5 +148,10 @@ public class UserServiceImpl implements UserService {
             existingUser.setPassword(passwordEncoder.encode(request.getPassword()));
         }
         return userRepository.save(existingUser);
+    }
+
+    @Override
+    public Page<User> getAllUserPage(Pageable pageable) {
+        return userRepository.findAll(pageable);
     }
 }

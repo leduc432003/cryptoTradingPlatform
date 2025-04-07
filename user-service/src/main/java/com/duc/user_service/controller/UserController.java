@@ -14,6 +14,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -107,13 +111,23 @@ public class UserController {
     }
 
     @GetMapping("/admin")
-    public ResponseEntity<List<User>> getAllUser(@RequestHeader("Authorization") String jwt) throws Exception {
+    public ResponseEntity<Page<User>> getAllUser(
+            @RequestHeader("Authorization") String jwt,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) throws Exception {
         User user = userService.findUserProfileByJwt(jwt);
         if(user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can watch user list");
         }
 
-        return new ResponseEntity<>(userService.getAllUser(), HttpStatus.OK);
+        Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return new ResponseEntity<>(userService.getAllUserPage(pageable), HttpStatus.OK);
     }
 
     @GetMapping("/admin/{userId}")
