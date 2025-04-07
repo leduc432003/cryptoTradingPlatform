@@ -126,13 +126,13 @@ public class CoinController {
     }
 
     @GetMapping("/new-listing")
-    public ResponseEntity<List<Coin>> getNewCoins() {
+    public ResponseEntity<List<Coin>> getNewCoins() throws Exception {
         List<Coin> newListing = coinService.getNewCoins();
         return new ResponseEntity<>(newListing, HttpStatus.OK);
     }
 
     @GetMapping("/new-delisted")
-    public ResponseEntity<List<Coin>> getDelistedCoins() {
+    public ResponseEntity<List<Coin>> getDelistedCoins() throws Exception {
         List<Coin> newListing = coinService.getDelistedCoins();
         return new ResponseEntity<>(newListing, HttpStatus.OK);
     }

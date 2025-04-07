@@ -24,10 +24,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -585,8 +582,34 @@ public class CoinServiceImpl implements CoinService {
     }
 
     @Override
-    public List<Coin> getDelistedCoins() {
-        return coinRepository.findByIsDelistedTrue();
+    public List<Coin> getDelistedCoins() throws Exception {
+        List<Coin> coinList1 = coinRepository.findByIsDelistedTrue();
+
+        if (coinList1.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String idList = coinList1.stream()
+                .map(Coin::getId)
+                .collect(Collectors.joining(","));
+        String url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=50&price_change_percentage=1h%2C7d" + "&ids=" + idList;
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Accept", "application/json")
+                    .header("x-cg-demo-api-key", API_KEY)
+                    .GET()
+                    .build();
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            List<Coin> delistedCoinList = objectMapper.readValue(response.body(), new TypeReference<List<Coin>>() {});
+
+            return delistedCoinList;
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw new Exception(e.getMessage());
+        }
     }
 
     @Override
@@ -595,8 +618,34 @@ public class CoinServiceImpl implements CoinService {
     }
 
     @Override
-    public List<Coin> getNewCoins() {
-        return coinRepository.findByIsNewTrue();
+    public List<Coin> getNewCoins() throws Exception {
+        List<Coin> coinList1 = coinRepository.findByIsNewTrue();
+
+        if (coinList1.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String idList = coinList1.stream()
+                .map(Coin::getId)
+                .collect(Collectors.joining(","));
+        String url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=50&price_change_percentage=1h%2C7d" + "&ids=" + idList;
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Accept", "application/json")
+                    .header("x-cg-demo-api-key", API_KEY)
+                    .GET()
+                    .build();
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            List<Coin> newCoinList = objectMapper.readValue(response.body(), new TypeReference<List<Coin>>() {});
+
+            return newCoinList;
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw new Exception(e.getMessage());
+        }
     }
 
     @Override

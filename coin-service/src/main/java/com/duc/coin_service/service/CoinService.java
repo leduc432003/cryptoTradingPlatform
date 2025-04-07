@@ -25,9 +25,9 @@ public interface CoinService {
     Coin updateCoin(String coinId, double minimumBuyPrice, double transactionFee, Long totalSupply) throws Exception;
     void deleteCoin(String coinId);
     Coin updateIsNewStatus(String id, boolean isNew);
-    List<Coin> getNewCoins();
+    List<Coin> getNewCoins() throws Exception;
     List<String> getTradingSymbols();
     Coin updateIsDelistedStatus(String id, boolean isDelisted);
-    List<Coin> getDelistedCoins();
+    List<Coin> getDelistedCoins() throws Exception;
     String getCoinIdByName(String name);
 }
