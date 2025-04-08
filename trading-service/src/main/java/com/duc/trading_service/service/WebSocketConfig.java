@@ -1,7 +1,5 @@
-package com.duc.trading_service.config;
+package com.duc.trading_service.service;
 
-import com.duc.trading_service.service.CoinPriceWebSocketClient;
-import com.duc.trading_service.service.CoinService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaTemplate;
