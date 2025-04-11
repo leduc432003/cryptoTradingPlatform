@@ -1,9 +1,6 @@
 package com.duc.user_service.controller;
 
-import com.duc.user_service.dto.request.AdminCreateUserRequest;
-import com.duc.user_service.dto.request.ChangePasswordRequest;
-import com.duc.user_service.dto.request.NotificationRequest;
-import com.duc.user_service.dto.request.UserUpdateRequest;
+import com.duc.user_service.dto.request.*;
 import com.duc.user_service.dto.response.ApiResponse;
 import com.duc.user_service.kafka.NotificationEvent;
 import com.duc.user_service.model.*;
@@ -187,7 +184,7 @@ public class UserController {
     }
 
     @PutMapping("/admin/{userId}")
-    public ResponseEntity<User> adminUpdateUser(@RequestHeader("Authorization") String jwt, @PathVariable Long userId, @Valid @RequestBody AdminCreateUserRequest request) throws Exception {
+    public ResponseEntity<User> adminUpdateUser(@RequestHeader("Authorization") String jwt, @PathVariable Long userId, @Valid @RequestBody AdminUpdateUserRequest request) throws Exception {
         User user = userService.findUserProfileByJwt(jwt);
         if(user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can update user");

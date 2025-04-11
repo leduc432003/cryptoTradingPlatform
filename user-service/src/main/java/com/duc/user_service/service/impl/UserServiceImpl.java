@@ -1,6 +1,7 @@
 package com.duc.user_service.service.impl;
 
 import com.duc.user_service.dto.request.AdminCreateUserRequest;
+import com.duc.user_service.dto.request.AdminUpdateUserRequest;
 import com.duc.user_service.dto.request.UserUpdateRequest;
 import com.duc.user_service.model.*;
 import com.duc.user_service.repository.UserRepository;
@@ -133,7 +134,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User adminUpdateUser(Long userId, AdminCreateUserRequest request) throws Exception {
+    public User adminUpdateUser(Long userId, AdminUpdateUserRequest request) throws Exception {
         User existingUser = findUserById(userId);
         if(request.getFullName() != null) {
             existingUser.setFullName(request.getFullName());
@@ -143,9 +144,6 @@ public class UserServiceImpl implements UserService {
         }
         if(request.getRole() != null) {
             existingUser.setRole(request.getRole());
-        }
-        if(request.getPassword() != null) {
-            existingUser.setPassword(passwordEncoder.encode(request.getPassword()));
         }
         return userRepository.save(existingUser);
     }
