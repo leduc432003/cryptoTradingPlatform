@@ -37,7 +37,7 @@ public class PaymentServiceImpl implements PaymentService {
     private String internalServiceToken;
 
     private BigDecimal convertUsdToVnd(BigDecimal amountInUsd) throws Exception {
-        String apiUrl = "https://api.exchangeratesapi.io/v1/latest?access_key=ffb04892fd56dd01eb316f37e6ab69e2";
+        String apiUrl = "https://api.exchangeratesapi.io/v1/latest?access_key=50e0be90ca2f6cef12c53ca193494f14";
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(apiUrl))
