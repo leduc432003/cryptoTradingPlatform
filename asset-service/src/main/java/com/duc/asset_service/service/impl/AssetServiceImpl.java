@@ -132,4 +132,10 @@ public class AssetServiceImpl implements AssetService {
 
         return toAsset;
     }
+
+    @Override
+    public List<Asset> getAssetsOfAdmin() {
+        UserDTO adminUser = userService.getUserByEmail(ADMIN_EMAIL);
+        return assetRepository.findByUserId(adminUser.getId());
+    }
 }

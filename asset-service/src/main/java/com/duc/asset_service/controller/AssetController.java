@@ -2,6 +2,7 @@ package com.duc.asset_service.controller;
 
 import com.duc.asset_service.dto.CoinDTO;
 import com.duc.asset_service.dto.UserDTO;
+import com.duc.asset_service.dto.UserRole;
 import com.duc.asset_service.dto.request.CreateAssetRequest;
 import com.duc.asset_service.dto.response.AssetResponse;
 import com.duc.asset_service.model.Asset;
@@ -14,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -80,6 +80,35 @@ public class AssetController {
     public ResponseEntity<List<AssetResponse>> getAssetsForUser(@RequestHeader("Authorization") String jwt) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         List<Asset> assets = assetService.getAssetsByUserId(user.getId());
+
+        List<String> coinIds = assets.stream()
+                .map(Asset::getCoinId)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<String, CoinDTO> coinMap = coinService.getCoinListByCoinIds(coinIds).stream()
+                .collect(Collectors.toMap(CoinDTO::getId, coin -> coin));
+
+        List<AssetResponse> responseList = assets.stream()
+                .map(asset -> AssetResponse.builder()
+                        .id(asset.getId())
+                        .userId(asset.getUserId())
+                        .quantity(asset.getQuantity())
+                        .buyPrice(asset.getBuyPrice())
+                        .coinDTO(coinMap.get(asset.getCoinId()))
+                        .build())
+                .collect(Collectors.toList());
+        return new ResponseEntity<>(responseList, HttpStatus.OK);
+    }
+
+    @GetMapping("/admin")
+    public ResponseEntity<List<AssetResponse>> getAssetsForAdmin(@RequestHeader("Authorization") String jwt) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+
+        if(user.getRole() != UserRole.ROLE_ADMIN) {
+            throw new Exception("Only admin can see the assets of admin");
+        }
+
+        List<Asset> assets = assetService.getAssetsOfAdmin();
 
         List<String> coinIds = assets.stream()
                 .map(Asset::getCoinId)

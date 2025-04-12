@@ -13,4 +13,5 @@ public interface AssetService {
     Asset findAssetByUserIdAndCoinId(Long userId, String coinId);
     void deleteAsset(Long assetId);
     Asset exchangeAsset(Long userId, String fromCoinId, String toCoinId, double amount) throws Exception;
+    List<Asset> getAssetsOfAdmin();
 }
