@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -20,6 +21,7 @@ public class Withdrawal {
     private Long id;
     private WithdrawalStatus status;
     private Long amount;
+    private BigDecimal amountInVnd;
     private Long userId;
     private LocalDateTime dateTime = LocalDateTime.now();
 }

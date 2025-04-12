@@ -8,10 +8,19 @@ import com.duc.withdrawal_service.repository.WithdrawalRepository;
 import com.duc.withdrawal_service.service.PaymentDetailsService;
 import com.duc.withdrawal_service.service.WalletService;
 import com.duc.withdrawal_service.service.WithdrawalService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +32,7 @@ public class WithdrawalServiceImpl implements WithdrawalService {
     private final WithdrawalRepository withdrawalRepository;
     private final PaymentDetailsService paymentDetailsService;
     private final WalletService walletService;
+    private final ObjectMapper objectMapper;
 
     @Override
     public Withdrawal requestWithdrawal(String jwt, Long amount, Long userId) throws Exception {
@@ -38,6 +48,7 @@ public class WithdrawalServiceImpl implements WithdrawalService {
         }
         Withdrawal withdrawal = new Withdrawal();
         withdrawal.setAmount(amount);
+        withdrawal.setAmountInVnd(convertUsdToVnd(BigDecimal.valueOf(amount)));
         withdrawal.setUserId(userId);
         withdrawal.setStatus(WithdrawalStatus.PENDING);
         return withdrawalRepository.save(withdrawal);
@@ -84,5 +95,31 @@ public class WithdrawalServiceImpl implements WithdrawalService {
             throw new Exception("Withdraw not found with id + " + withdrawalId);
         }
         return withdrawal.get();
+    }
+
+    private BigDecimal convertUsdToVnd(BigDecimal amountInUsd) throws Exception {
+        String apiUrl = "https://api.exchangeratesapi.io/v1/latest?access_key=50e0be90ca2f6cef12c53ca193494f14";
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(apiUrl))
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            JsonNode jsonNode = objectMapper.readTree(response.body());
+
+            BigDecimal usdRate = new BigDecimal(jsonNode.path("rates").path("USD").asText());
+            BigDecimal vndRate = new BigDecimal(jsonNode.path("rates").path("VND").asText());
+
+            if (usdRate.compareTo(BigDecimal.ZERO) == 0) {
+                throw new IllegalArgumentException("Invalid USD rate received from API");
+            }
+
+            BigDecimal amountInVnd = amountInUsd.divide(usdRate, 4, RoundingMode.HALF_UP).multiply(vndRate);
+            return amountInVnd.setScale(0, RoundingMode.HALF_UP);
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw new Exception("Error occurred while calling Exchange Rates API: " + e.getMessage());
+        }
     }
 }
