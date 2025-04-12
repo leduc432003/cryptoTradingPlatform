@@ -267,6 +267,7 @@ public class CoinServiceImpl implements CoinService {
                 coin.setMinimumBuyPrice(coin1.get().getMinimumBuyPrice());
                 coin.setTransactionFee(coin1.get().getTransactionFee());
                 coin.setNew(coin1.get().isNew());
+                coin.setDelisted(coin1.get().isDelisted());
                 coin.setTradingSymbol(coin1.get().getTradingSymbol());
                 coinRepository.save(coin);
             }
