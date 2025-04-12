@@ -117,13 +117,15 @@ public class WalletTransactionController {
 
     @GetMapping("/admin/total-volume/chart")
     public ResponseEntity<List<List<Object>>> getTotalVolumeChart(@RequestHeader("Authorization") String jwt,
+                                                                  @RequestParam(value = "startDate", required = false) String startDate,
+                                                                  @RequestParam(value = "endDate", required = false) String endDate,
                                                             @RequestParam(value = "days", required = false) Long days,
                                                                   @RequestParam(value = "transaction_type", required = false) List<WalletTransactionType> transactionTypes) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         if(user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can see wallet user");
         }
-        List<List<Object>> totalVolume = walletTransactionService.getTotalAmountByDateWithTimestamp(days, transactionTypes);
+        List<List<Object>> totalVolume = walletTransactionService.getTotalAmountByDateWithTimestamp(startDate, endDate, days, transactionTypes);
 
         return ResponseEntity.ok(totalVolume);
     }

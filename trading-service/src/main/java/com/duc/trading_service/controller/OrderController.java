@@ -120,14 +120,25 @@ public class OrderController {
     public Map<String, Double> getTotalTransactionsByCoinInDateRange(
             @RequestHeader("Authorization") String jwt,
             @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate) throws Exception {
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false, defaultValue = "0") Integer days) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
         if (user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("You are not authorized to access.");
         }
 
-        LocalDate start = (startDate != null) ? LocalDate.parse(startDate) : LocalDate.now();
-        LocalDate end = (endDate != null) ? LocalDate.parse(endDate) : start;
+        LocalDate end;
+        LocalDate start;
+
+        if (days > 0) {
+            end = LocalDate.now();
+            start = end.minusDays(days);
+        } else if (startDate != null || endDate != null) {
+            start = (startDate != null) ? LocalDate.parse(startDate) : LocalDate.now();
+            end = (endDate != null) ? LocalDate.parse(endDate) : start;
+        } else {
+            return orderItemService.getTotalTransactionsByCoinInDateRange(null, null);
+        }
 
         return orderItemService.getTotalTransactionsByCoinInDateRange(start, end);
     }

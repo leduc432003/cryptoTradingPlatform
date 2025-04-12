@@ -29,8 +29,13 @@ public class OrderItemServiceImpl implements OrderItemService {
 
     @Override
     public Map<String, Double> getTotalTransactionsByCoinInDateRange(LocalDate startDate, LocalDate endDate) {
-        LocalDateTime startDateTime = startDate.atStartOfDay();
-        LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
+        LocalDateTime startDateTime = null;
+        LocalDateTime endDateTime = null;
+
+        if (startDate != null && endDate != null) {
+            startDateTime = startDate.atStartOfDay();
+            endDateTime = endDate.atTime(23, 59, 59);
+        }
 
         List<Object[]> results = orderItemRepository.getTotalTransactionsByCoinInDateRange(startDateTime, endDateTime);
         Map<String, Double> transactions = new HashMap<>();

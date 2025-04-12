@@ -12,10 +12,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.time.format.DateTimeParseException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -109,77 +107,131 @@ public class WalletTransactionServiceImpl implements WalletTransactionService {
     }
 
     @Override
-    public List<List<Object>> getTotalAmountByDateWithTimestamp(Long days, List<WalletTransactionType> transactionTypes) {
-        LocalDate endDate = LocalDate.now();
-        LocalDate startDate = (days == null) ? LocalDate.MIN : endDate.minusDays(days);
+    public List<List<Object>> getTotalAmountByDateWithTimestamp(String startDateStr, String endDateStr, Long days, List<WalletTransactionType> transactionTypes) {
+        LocalDate endDate;
+        LocalDate startDate;
 
+        // Ưu tiên days nếu được cung cấp
+        if (days != null) {
+            if (days < 0) {
+                throw new IllegalArgumentException("Days cannot be negative.");
+            }
+            endDate = LocalDate.now();
+            startDate = endDate.minusDays(days);
+        }
+        // Nếu không có days, kiểm tra startDate và endDate
+        else if (startDateStr != null && endDateStr != null) {
+            try {
+                startDate = LocalDate.parse(startDateStr);
+                endDate = LocalDate.parse(endDateStr);
+                if (startDate.isAfter(endDate)) {
+                    throw new IllegalArgumentException("startDate cannot be after endDate.");
+                }
+            } catch (DateTimeParseException e) {
+                throw new IllegalArgumentException("Invalid date format. Use YYYY-MM-DD.");
+            }
+        }
+        // Nếu không có days, startDate, endDate, lấy toàn bộ dữ liệu
+        else {
+            endDate = LocalDate.now();
+            startDate = LocalDate.MIN; // Lấy toàn bộ lịch sử giao dịch
+        }
+
+        // Lấy giao dịch từ repository
         List<WalletTransaction> transactions = walletTransactionRepository.findAllByDateBetweenAndTransactionTypes(startDate, endDate, transactionTypes);
 
-        return transactions.stream()
-                .collect(Collectors.groupingBy(WalletTransaction::getDate))
-                .entrySet().stream()
-                .map(entry -> {
-                    LocalDate date = entry.getKey();
-                    List<WalletTransaction> dailyTransactions = entry.getValue();
+        // Nhóm giao dịch theo ngày
+        Map<LocalDate, List<WalletTransaction>> transactionsByDate = transactions.stream()
+                .collect(Collectors.groupingBy(WalletTransaction::getDate));
 
-                    double totalAmount = dailyTransactions.stream()
-                            .filter(tx -> tx.getWalletTransactionType() != WalletTransactionType.REFUND_BUY_ASSET)
-                            .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
-                            .sum();
+        // Tạo danh sách kết quả cho tất cả các ngày trong khoảng thời gian
+        List<List<Object>> result = new ArrayList<>();
+        LocalDate currentDate = startDate.equals(LocalDate.MIN)
+                ? transactionsByDate.keySet().stream().min(LocalDate::compareTo).orElse(endDate)
+                : startDate;
 
-                    double refundAmount = dailyTransactions.stream()
-                            .filter(tx -> tx.getWalletTransactionType() == WalletTransactionType.REFUND_BUY_ASSET)
-                            .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
-                            .sum();
+        while (!currentDate.isAfter(endDate)) {
+            List<WalletTransaction> dailyTransactions = transactionsByDate.getOrDefault(currentDate, Collections.emptyList());
 
-                    double netAmount = totalAmount - refundAmount;
+            double totalAmount = dailyTransactions.stream()
+                    .filter(tx -> tx.getWalletTransactionType() != WalletTransactionType.REFUND_BUY_ASSET)
+                    .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
+                    .sum();
 
-                    long timestamp = date.atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000;
-                    return Arrays.<Object>asList(timestamp, netAmount);
-                })
-                .sorted(Comparator.comparing(o -> (Long) o.get(0))) // Sort by timestamp
-                .collect(Collectors.toList());
+            double refundAmount = dailyTransactions.stream()
+                    .filter(tx -> tx.getWalletTransactionType() == WalletTransactionType.REFUND_BUY_ASSET)
+                    .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
+                    .sum();
+
+            double netAmount = totalAmount - refundAmount;
+
+            long timestamp = currentDate.atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000;
+            result.add(Arrays.<Object>asList(timestamp, netAmount));
+
+            currentDate = currentDate.plusDays(1);
+        }
+
+        return result;
     }
 
     @Override
     public List<List<Object>> getTotalAmountByMonthWithTimestamp(Long months, List<WalletTransactionType> transactionTypes) {
         LocalDate endDate = LocalDate.now();
-        LocalDate startDate = (months == null) ? LocalDate.MIN : endDate.minusMonths(months);
+        LocalDate startDate;
 
+        // Kiểm tra months
+        if (months != null) {
+            if (months < 0) {
+                throw new IllegalArgumentException("Months cannot be negative.");
+            }
+            startDate = endDate.minusMonths(months);
+        } else {
+            startDate = LocalDate.MIN; // Lấy toàn bộ nếu months là null
+        }
+
+        // Lấy giao dịch từ repository
         List<WalletTransaction> transactions = walletTransactionRepository.findAllByDateBetweenAndTransactionTypes(startDate, endDate, transactionTypes);
 
-        // Nhóm các giao dịch theo tháng
+        // Nhóm giao dịch theo tháng
         Map<YearMonth, List<WalletTransaction>> transactionsByMonth = transactions.stream()
                 .collect(Collectors.groupingBy(tx -> YearMonth.from(tx.getDate())));
 
-        // Xử lý từng nhóm (tháng)
-        return transactionsByMonth.entrySet().stream()
-                .map(entry -> {
-                    YearMonth yearMonth = entry.getKey(); // Lấy tháng
-                    List<WalletTransaction> monthlyTransactions = entry.getValue(); // Lấy danh sách giao dịch trong tháng
+        // Tạo danh sách kết quả cho tất cả các tháng trong khoảng thời gian
+        List<List<Object>> result = new ArrayList<>();
+        YearMonth endYearMonth = YearMonth.from(endDate);
+        YearMonth startYearMonth = startDate.equals(LocalDate.MIN)
+                ? transactionsByMonth.keySet().stream().min(YearMonth::compareTo).orElse(endYearMonth)
+                : YearMonth.from(startDate);
 
-                    // Tính tổng số tiền trong tháng
-                    double totalAmount = monthlyTransactions.stream()
-                            .filter(tx -> tx.getWalletTransactionType() != WalletTransactionType.REFUND_BUY_ASSET)
-                            .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
-                            .sum();
+        YearMonth currentYearMonth = startYearMonth;
+        while (!currentYearMonth.isAfter(endYearMonth)) {
+            List<WalletTransaction> monthlyTransactions = transactionsByMonth.getOrDefault(currentYearMonth, Collections.emptyList());
 
-                    // Tính tổng số tiền của REFUND_BUY_ASSET trong tháng
-                    double refundAmount = monthlyTransactions.stream()
-                            .filter(tx -> tx.getWalletTransactionType() == WalletTransactionType.REFUND_BUY_ASSET)
-                            .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
-                            .sum();
+            // Tính tổng số tiền trong tháng
+            double totalAmount = monthlyTransactions.stream()
+                    .filter(tx -> tx.getWalletTransactionType() != WalletTransactionType.REFUND_BUY_ASSET)
+                    .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
+                    .sum();
 
-                    double netAmount = totalAmount - refundAmount;
+            // Tính tổng số tiền của REFUND_BUY_ASSET trong tháng
+            double refundAmount = monthlyTransactions.stream()
+                    .filter(tx -> tx.getWalletTransactionType() == WalletTransactionType.REFUND_BUY_ASSET)
+                    .mapToDouble(tx -> Math.abs(tx.getAmount().doubleValue()))
+                    .sum();
 
-                    // Tạo timestamp cho ngày đầu tiên của tháng
-                    long timestamp = yearMonth.atDay(1).atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000;
+            double netAmount = totalAmount - refundAmount;
 
-                    // Trả về danh sách chứa timestamp và tổng số tiền sau khi trừ REFUND
-                    return Arrays.<Object>asList(timestamp, netAmount);
-                })
-                .sorted(Comparator.comparing(o -> (Long) o.get(0))) // Sắp xếp theo timestamp
-                .collect(Collectors.toList());
+            // Tạo timestamp cho ngày đầu tiên của tháng
+            long timestamp = currentYearMonth.atDay(1).atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000;
+
+            // Thêm vào kết quả
+            result.add(Arrays.<Object>asList(timestamp, netAmount));
+
+            // Chuyển sang tháng tiếp theo
+            currentYearMonth = currentYearMonth.plusMonths(1);
+        }
+
+        return result;
     }
 
     @Override

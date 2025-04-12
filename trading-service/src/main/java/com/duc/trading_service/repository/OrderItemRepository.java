@@ -14,7 +14,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
     @Query("SELECT oi.coinId, SUM(oi.quantity) " +
             "FROM OrderItem oi " +
             "JOIN oi.order o " +
-            "WHERE o.timestamp BETWEEN :startDate AND :endDate " +
+            "WHERE (:startDate IS NULL OR :endDate IS NULL OR o.timestamp BETWEEN :startDate AND :endDate) " +
             "AND o.status = com.duc.trading_service.model.OrderStatus.SUCCESS " +
             "GROUP BY oi.coinId")
     List<Object[]> getTotalTransactionsByCoinInDateRange(@Param("startDate") LocalDateTime startDate,

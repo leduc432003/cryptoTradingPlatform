@@ -16,7 +16,7 @@ public interface WalletTransactionService {
     List<WalletTransaction> getTransactionsByFilters(LocalDate startDate, LocalDate endDate, List<WalletTransactionType> transactionTypes);
     double getTotalAmountByFilters(Long days, List<WalletTransactionType> transactionTypes);
     double getTotalAmountByDateRange(LocalDate startDate, LocalDate endDate, List<WalletTransactionType> transactionTypes) throws Exception;
-    List<List<Object>> getTotalAmountByDateWithTimestamp(Long days, List<WalletTransactionType> transactionTypes);
+    List<List<Object>> getTotalAmountByDateWithTimestamp(String startDateStr, String endDateStr, Long days, List<WalletTransactionType> transactionTypes);
     List<List<Object>> getTotalAmountByMonthWithTimestamp(Long months, List<WalletTransactionType> transactionTypes);
     long countBuyAndSellAssetTransactions(Long walletId);
 }
