@@ -98,28 +98,29 @@ public class WithdrawalServiceImpl implements WithdrawalService {
     }
 
     private BigDecimal convertUsdToVnd(BigDecimal amountInUsd) throws Exception {
-        String apiUrl = "https://api.exchangeratesapi.io/v1/latest?access_key=50e0be90ca2f6cef12c53ca193494f14";
+        String apiUrl = "https://api.coingecko.com/api/v3/coins/tether";
+
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(apiUrl))
-                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .header("x-cg-demo-api-key", "CG-HfJNVa7kfaaTEWbWDmjDQnWM")
                     .GET()
                     .build();
 
             HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
             JsonNode jsonNode = objectMapper.readTree(response.body());
 
-            BigDecimal usdRate = new BigDecimal(jsonNode.path("rates").path("USD").asText());
-            BigDecimal vndRate = new BigDecimal(jsonNode.path("rates").path("VND").asText());
+            BigDecimal vndRate = new BigDecimal(jsonNode.path("market_data").path("current_price").path("vnd").asText());
 
-            if (usdRate.compareTo(BigDecimal.ZERO) == 0) {
-                throw new IllegalArgumentException("Invalid USD rate received from API");
+            if (vndRate.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Invalid VND rate received from API");
             }
 
-            BigDecimal amountInVnd = amountInUsd.divide(usdRate, 4, RoundingMode.HALF_UP).multiply(vndRate);
+            BigDecimal amountInVnd = amountInUsd.multiply(vndRate);
             return amountInVnd.setScale(0, RoundingMode.HALF_UP);
-        } catch (HttpClientErrorException | HttpServerErrorException e) {
-            throw new Exception("Error occurred while calling Exchange Rates API: " + e.getMessage());
+        } catch (Exception e) {
+            throw new Exception("Error occurred while calling CoinGecko API: " + e.getMessage());
         }
     }
 }
