@@ -14,7 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -71,17 +73,28 @@ public class WithdrawalController {
             throw new Exception("Only admin can watch withdrawal");
         }
         List<Withdrawal> withdrawalList = withdrawalService.getAllWithdrawalRequest(withdrawalStatus);
+
+        Map<Long, PaymentDetailsDTO> paymentDetailsCache = new HashMap<>();
         List<WithdrawalDetailDTO> withdrawalDetails = withdrawalList.stream().map(withdrawal -> {
-            PaymentDetailsDTO bankAccount = paymentDetailsService.getUserPaymentDetailsById(jwt, withdrawal.getUserId());
+            PaymentDetailsDTO bankAccount = paymentDetailsCache.computeIfAbsent(withdrawal.getUserId(),
+                    userId -> paymentDetailsService.getUserPaymentDetailsById(jwt, userId));
+
             WithdrawalDetailDTO detail = new WithdrawalDetailDTO();
             detail.setWithdrawal(withdrawal);
+
             if (bankAccount != null) {
                 detail.setBankAccount(bankAccount.getAccountNumber());
                 detail.setBankName(bankAccount.getBankName());
                 detail.setAccountHolderName(bankAccount.getAccountName());
+            } else {
+                detail.setBankAccount("N/A");
+                detail.setBankName("N/A");
+                detail.setAccountHolderName("N/A");
             }
+
             return detail;
         }).toList();
+
 
         return new ResponseEntity<>(withdrawalDetails, HttpStatus.OK);
     }

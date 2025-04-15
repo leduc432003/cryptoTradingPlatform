@@ -80,12 +80,10 @@ public class WithdrawalServiceImpl implements WithdrawalService {
 
     @Override
     public List<Withdrawal> getAllWithdrawalRequest(WithdrawalStatus withdrawalStatus) {
-        List<Withdrawal> withdrawalList = withdrawalRepository.findAll();
-        List<Withdrawal> filteredWithdrawal = withdrawalList.stream()
-                .filter(withdrawal -> withdrawalStatus == null ||
-                        withdrawal.getStatus().name().equalsIgnoreCase(withdrawalStatus.toString()))
-                .toList();
-        return filteredWithdrawal;
+        if (withdrawalStatus == null) {
+            return withdrawalRepository.findAll();
+        }
+        return withdrawalRepository.findAllByStatus(withdrawalStatus);
     }
 
     @Override
