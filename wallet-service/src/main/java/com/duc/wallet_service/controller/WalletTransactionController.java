@@ -82,13 +82,42 @@ public class WalletTransactionController {
         return new ResponseEntity<>(walletTransactionList, HttpStatus.OK);
     }
 
-    @GetMapping("/admin/total-amount-transaction-by-range")
-    public ResponseEntity<Double> getTotalAmountTransactionByRange(@RequestHeader("Authorization") String jwt,
-                                                                     @RequestParam(value = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-                                                                   @RequestParam(value = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-                                                                   @RequestParam(value = "transaction_type", required = false) List<WalletTransactionType> transactionTypes) throws Exception {
+    @GetMapping("/admin/total-amount-transaction")
+    public ResponseEntity<Double> getTotalAmountTransaction(
+            @RequestHeader("Authorization") String jwt,
+            @RequestParam(value = "days", required = false) Long days,
+            @RequestParam(value = "transaction_type", required = false) List<WalletTransactionType> transactionTypes) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
-        if(user.getRole() != UserRole.ROLE_ADMIN) {
+        if (user.getRole() != UserRole.ROLE_ADMIN) {
+            throw new Exception("Only admin can see wallet user");
+        }
+        double totalAmount = walletTransactionService.getTotalAmountByFilters(days, transactionTypes);
+        return new ResponseEntity<>(totalAmount, HttpStatus.OK);
+    }
+
+    // Endpoint cho tổng phí giao dịch theo số ngày
+    @GetMapping("/admin/total-fee-transaction")
+    public ResponseEntity<Double> getTotalFeeTransaction(
+            @RequestHeader("Authorization") String jwt,
+            @RequestParam(value = "days", required = false) Long days,
+            @RequestParam(value = "transaction_type", required = false) List<WalletTransactionType> transactionTypes) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        if (user.getRole() != UserRole.ROLE_ADMIN) {
+            throw new Exception("Only admin can see wallet user");
+        }
+        double totalFee = walletTransactionService.getTotalFeeAmountByFilters(days, transactionTypes);
+        return new ResponseEntity<>(totalFee, HttpStatus.OK);
+    }
+
+    // Endpoint cho tổng khối lượng giao dịch theo khoảng thời gian
+    @GetMapping("/admin/total-amount-transaction-by-range")
+    public ResponseEntity<Double> getTotalAmountTransactionByRange(
+            @RequestHeader("Authorization") String jwt,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @RequestParam(value = "startDate", required = false) LocalDate startDate,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @RequestParam(value = "endDate", required = false) LocalDate endDate,
+            @RequestParam(value = "transaction_type", required = false) List<WalletTransactionType> transactionTypes) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        if (user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can see wallet user");
         }
 
@@ -100,46 +129,89 @@ public class WalletTransactionController {
         }
 
         double totalAmount = walletTransactionService.getTotalAmountByDateRange(startDate, endDate, transactionTypes);
-
         return new ResponseEntity<>(totalAmount, HttpStatus.OK);
     }
 
-    @GetMapping("/admin/total-amount-transaction")
-    public ResponseEntity<Double> getTotalAmountTransaction(@RequestHeader("Authorization") String jwt,
-                                                            @RequestParam(value = "days", required = false) Long days,
-                                                            @RequestParam(value = "transaction_type", required = false) List<WalletTransactionType> transactionTypes) throws Exception {
+    // Endpoint cho tổng phí giao dịch theo khoảng thời gian
+    @GetMapping("/admin/total-fee-transaction-by-range")
+    public ResponseEntity<Double> getTotalFeeTransactionByRange(
+            @RequestHeader("Authorization") String jwt,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @RequestParam(value = "startDate", required = false) LocalDate startDate,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @RequestParam(value = "endDate", required = false) LocalDate endDate,
+            @RequestParam(value = "transaction_type", required = false) List<WalletTransactionType> transactionTypes) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
-        if(user.getRole() != UserRole.ROLE_ADMIN) {
+        if (user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can see wallet user");
         }
-        return new ResponseEntity<>(walletTransactionService.getTotalAmountByFilters(days, transactionTypes), HttpStatus.OK);
+
+        if (startDate == null) {
+            startDate = LocalDate.MIN;
+        }
+        if (endDate == null) {
+            endDate = LocalDate.now();
+        }
+
+        double totalFee = walletTransactionService.getTotalFeeAmountByDateRange(startDate, endDate, transactionTypes);
+        return new ResponseEntity<>(totalFee, HttpStatus.OK);
     }
 
+    // Endpoint cho biểu đồ tổng khối lượng giao dịch theo ngày
     @GetMapping("/admin/total-volume/chart")
-    public ResponseEntity<List<List<Object>>> getTotalVolumeChart(@RequestHeader("Authorization") String jwt,
-                                                                  @RequestParam(value = "startDate", required = false) String startDate,
-                                                                  @RequestParam(value = "endDate", required = false) String endDate,
-                                                            @RequestParam(value = "days", required = false) Long days,
-                                                                  @RequestParam(value = "transaction_type", required = false) List<WalletTransactionType> transactionTypes) throws Exception {
+    public ResponseEntity<List<List<Object>>> getTotalVolumeChart(
+            @RequestHeader("Authorization") String jwt,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "days", required = false) Long days,
+            @RequestParam(value = "transaction_type", required = false) List<WalletTransactionType> transactionTypes) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
-        if(user.getRole() != UserRole.ROLE_ADMIN) {
+        if (user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can see wallet user");
         }
         List<List<Object>> totalVolume = walletTransactionService.getTotalAmountByDateWithTimestamp(startDate, endDate, days, transactionTypes);
-
         return ResponseEntity.ok(totalVolume);
     }
 
-    @GetMapping("/admin/total-volume-by-month/chart")
-    public ResponseEntity<List<List<Object>>> getTotalVolumeByMonthChart(@RequestHeader("Authorization") String jwt,
-                                                                  @RequestParam(value = "months", required = false) Long months,
-                                                                  @RequestParam(value = "transaction_type", required = false) List<WalletTransactionType> transactionTypes) throws Exception {
+    // Endpoint cho biểu đồ tổng phí giao dịch theo ngày
+    @GetMapping("/admin/total-fee-volume/chart")
+    public ResponseEntity<List<List<Object>>> getTotalFeeVolumeChart(
+            @RequestHeader("Authorization") String jwt,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "days", required = false) Long days,
+            @RequestParam(value = "transaction_type", required = false) List<WalletTransactionType> transactionTypes) throws Exception {
         UserDTO user = userService.getUserProfile(jwt);
-        if(user.getRole() != UserRole.ROLE_ADMIN) {
+        if (user.getRole() != UserRole.ROLE_ADMIN) {
+            throw new Exception("Only admin can see wallet user");
+        }
+        List<List<Object>> totalFeeVolume = walletTransactionService.getTotalFeeAmountByDateWithTimestamp(startDate, endDate, days, transactionTypes);
+        return ResponseEntity.ok(totalFeeVolume);
+    }
+
+    // Endpoint cho biểu đồ tổng khối lượng giao dịch theo tháng
+    @GetMapping("/admin/total-volume-by-month/chart")
+    public ResponseEntity<List<List<Object>>> getTotalVolumeByMonthChart(
+            @RequestHeader("Authorization") String jwt,
+            @RequestParam(value = "months", required = false) Long months,
+            @RequestParam(value = "transaction_type", required = false) List<WalletTransactionType> transactionTypes) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        if (user.getRole() != UserRole.ROLE_ADMIN) {
             throw new Exception("Only admin can see wallet user");
         }
         List<List<Object>> totalVolume = walletTransactionService.getTotalAmountByMonthWithTimestamp(months, transactionTypes);
-
         return ResponseEntity.ok(totalVolume);
+    }
+
+    // Endpoint cho biểu đồ tổng phí giao dịch theo tháng
+    @GetMapping("/admin/total-fee-volume-by-month/chart")
+    public ResponseEntity<List<List<Object>>> getTotalFeeVolumeByMonthChart(
+            @RequestHeader("Authorization") String jwt,
+            @RequestParam(value = "months", required = false) Long months,
+            @RequestParam(value = "transaction_type", required = false) List<WalletTransactionType> transactionTypes) throws Exception {
+        UserDTO user = userService.getUserProfile(jwt);
+        if (user.getRole() != UserRole.ROLE_ADMIN) {
+            throw new Exception("Only admin can see wallet user");
+        }
+        List<List<Object>> totalFeeVolume = walletTransactionService.getTotalFeeAmountByMonthWithTimestamp(months, transactionTypes);
+        return ResponseEntity.ok(totalFeeVolume);
     }
 }
