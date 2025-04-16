@@ -52,7 +52,7 @@ public class WithdrawalController {
             AddBalanceRequest addBalanceRequest = new AddBalanceRequest();
             addBalanceRequest.setUserId(withdrawal.getUserId());
             addBalanceRequest.setMoney(withdrawal.getAmount());
-            addBalanceRequest.setTransactionType(WalletTransactionType.WITHDRAWAL);
+            addBalanceRequest.setTransactionType(WalletTransactionType.REFUND_WITHDRAWAL);
             walletService.addBalance(internalServiceToken, addBalanceRequest);
         }
         return new ResponseEntity<>(withdrawal, HttpStatus.OK);

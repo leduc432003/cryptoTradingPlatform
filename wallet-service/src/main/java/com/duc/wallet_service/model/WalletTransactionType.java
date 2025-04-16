@@ -2,6 +2,7 @@ package com.duc.wallet_service.model;
 
 public enum WalletTransactionType {
     WITHDRAWAL,
+    REFUND_WITHDRAWAL,
     WALLET_TRANSFER,
     ADD_MONEY,
     BUY_ASSET,
