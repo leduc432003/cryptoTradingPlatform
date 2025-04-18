@@ -46,7 +46,7 @@ public class EmailService {
 
         String subject = "Sự kiện sắp diễn ra: " + eventName;
         String text = "<div style='font-family: Arial, sans-serif; text-align: center;'>" +
-                "<h2 style='color: #333;'>Sự kiện sắp diễn ra!</h2>" +
+                "<h2 style='color: #333;'>Thông báo!</h2>" +
                 "<h3 style='color: #4CAF50;'>" + eventName + "</h3>" +
                 "<p>" + eventContent + "</p>" +
                 "<p>Hãy theo dõi để không bỏ lỡ nhé!</p>" +
