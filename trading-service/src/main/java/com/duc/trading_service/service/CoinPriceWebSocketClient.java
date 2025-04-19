@@ -49,7 +49,6 @@ public class CoinPriceWebSocketClient extends WebSocketClient {
 
     @Override
     public void onMessage(String message) {
-        System.out.println("Received: " + message);
         handlePriceData(message);
     }
 
@@ -73,7 +72,6 @@ public class CoinPriceWebSocketClient extends WebSocketClient {
                 if (klineData != null && klineData.has("c")) {
                     String closePrice = klineData.get("c").asText();
                     coinData.put(symbol, closePrice);
-                    System.out.println("Updated price for " + symbol + ": " + closePrice);
 
                     Map<String, String> priceData = new HashMap<>();
                     priceData.put("symbol", symbol.toLowerCase());
