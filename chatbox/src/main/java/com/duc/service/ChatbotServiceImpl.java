@@ -213,7 +213,7 @@ public class ChatbotServiceImpl implements ChatbotService {
             CoinDto apiResponse = makeApiRequest(coinId);
 
             // Gửi yêu cầu tiếp theo tới Gemini để tạo phản hồi thân thiện
-            String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" + GEMINI_API_KEY;
+            String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_API_KEY;
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
