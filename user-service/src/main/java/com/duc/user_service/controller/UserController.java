@@ -21,6 +21,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -33,6 +34,7 @@ public class UserController {
     private final VerificationCodeService verificationCodeService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final NewTopic topic;
+    private static final long OTP_EXPIRATION_MINUTES = 5;
 
     @GetMapping("/profile")
     public ResponseEntity<User> getUserProfile(@RequestHeader("Authorization") String jwt) throws Exception {
@@ -45,28 +47,44 @@ public class UserController {
     public ResponseEntity<User> enableTwoFactorAuthentication(@RequestHeader("Authorization") String jwt, @RequestParam String otp) throws Exception {
         User user = userService.findUserProfileByJwt(jwt);
         VerificationCode verificationCode = verificationCodeService.getVerificationCodeByUser(user.getId());
-        String sendTo = verificationCode.getVerificationType().equals(VerificationType.EMAIL) ? verificationCode.getEmail() : verificationCode.getMobile();
-        boolean isVerified = verificationCode.getOtp().equals(otp);
-        if(isVerified) {
-            User updateUser = userService.enableTwoFactorAuthentication(verificationCode.getVerificationType(), sendTo, user);
-            verificationCodeService.deleteVerificationCodeById(verificationCode);
-            return new ResponseEntity<>(updateUser, HttpStatus.OK);
+        if (verificationCode == null) {
+            throw new Exception("No verification code found");
         }
-        throw new Exception("otp is wrong");
+
+        if (verificationCode.getExpirationTime().isBefore(LocalDateTime.now())) {
+            verificationCodeService.deleteVerificationCodeById(verificationCode);
+            throw new Exception("OTP has expired");
+        }
+
+        if (!verificationCode.getOtp().equals(otp)) {
+            throw new Exception("Invalid OTP");
+        }
+
+        String sendTo = verificationCode.getVerificationType().equals(VerificationType.EMAIL) ? verificationCode.getEmail() : verificationCode.getMobile();
+        User updateUser = userService.enableTwoFactorAuthentication(verificationCode.getVerificationType(), sendTo, user);
+        return new ResponseEntity<>(updateUser, HttpStatus.OK);
     }
 
     @PatchMapping("/disable-two-factor/verify-otp")
     public ResponseEntity<User> disableTwoFactorAuthentication(@RequestHeader("Authorization") String jwt, @RequestParam String otp) throws Exception {
         User user = userService.findUserProfileByJwt(jwt);
         VerificationCode verificationCode = verificationCodeService.getVerificationCodeByUser(user.getId());
-        String sendTo = verificationCode.getVerificationType().equals(VerificationType.EMAIL) ? verificationCode.getEmail() : verificationCode.getMobile();
-        boolean isVerified = verificationCode.getOtp().equals(otp);
-        if(isVerified) {
-            User updateUser = userService.disableTwoFactorAuthentication(verificationCode.getVerificationType(), sendTo, user);
-            verificationCodeService.deleteVerificationCodeById(verificationCode);
-            return new ResponseEntity<>(updateUser, HttpStatus.OK);
+        if (verificationCode == null) {
+            throw new Exception("No verification code found");
         }
-        throw new Exception("otp is wrong");
+
+        if (verificationCode.getExpirationTime().isBefore(LocalDateTime.now())) {
+            verificationCodeService.deleteVerificationCodeById(verificationCode);
+            throw new Exception("OTP has expired");
+        }
+
+        if (!verificationCode.getOtp().equals(otp)) {
+            throw new Exception("Invalid OTP");
+        }
+
+        String sendTo = verificationCode.getVerificationType().equals(VerificationType.EMAIL) ? verificationCode.getEmail() : verificationCode.getMobile();
+        User updateUser = userService.disableTwoFactorAuthentication(verificationCode.getVerificationType(), sendTo, user);
+        return new ResponseEntity<>(updateUser, HttpStatus.OK);
     }
 
     @PostMapping("/verification/{verificationType}/send-otp")
@@ -75,7 +93,7 @@ public class UserController {
         VerificationCode verificationCode = verificationCodeService.getVerificationCodeByUser(user.getId());
 
         if(verificationCode == null) {
-            verificationCode = verificationCodeService.sendVerificationCode(user, verificationType);
+            verificationCode = verificationCodeService.sendVerificationCode(user, verificationType, LocalDateTime.now().plusMinutes(OTP_EXPIRATION_MINUTES));
         }
         if(verificationType.equals(VerificationType.EMAIL)) {
             NotificationEvent notificationEvent = NotificationEvent.builder()

@@ -8,6 +8,7 @@ import com.duc.user_service.service.ForgotPasswordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -16,13 +17,14 @@ public class ForgotPasswordServiceImpl implements ForgotPasswordService {
     private final ForgotPasswordRepository forgotPasswordRepository;
 
     @Override
-    public ForgotPasswordOTP createOTP(User user, String id, String otp, VerificationType verificationType, String sendTo) {
+    public ForgotPasswordOTP createOTP(User user, String id, String otp, VerificationType verificationType, String sendTo, LocalDateTime expirationTime) {
         ForgotPasswordOTP forgotPasswordOTP = ForgotPasswordOTP.builder()
                 .id(id)
                 .user(user)
                 .sendTo(sendTo)
                 .otp(otp)
                 .verificationType(verificationType)
+                .expirationTime(expirationTime)
                 .build();
         return forgotPasswordRepository.save(forgotPasswordOTP);
     }

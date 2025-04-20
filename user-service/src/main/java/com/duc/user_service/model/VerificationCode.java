@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -21,4 +23,5 @@ public class VerificationCode {
     private String email;
     private String mobile;
     private VerificationType verificationType;
+    private LocalDateTime expirationTime;
 }

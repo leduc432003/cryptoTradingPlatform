@@ -25,6 +25,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @RequestMapping("/api/auth")
@@ -39,6 +40,7 @@ public class AuthController {
     private final UserService userService;
     private final ForgotPasswordService forgotPasswordService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private static final long OTP_EXPIRATION_MINUTES = 5;
 
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse> register(@Valid @RequestBody UserRequest user) throws Exception {
@@ -66,7 +68,7 @@ public class AuthController {
         }
         User saveUser = userRepository.save(newUser);
 
-        VerificationCode verificationCode = verificationCodeService.sendVerificationCode(saveUser, VerificationType.EMAIL);
+        VerificationCode verificationCode = verificationCodeService.sendVerificationCode(saveUser, VerificationType.EMAIL, LocalDateTime.now().plusMinutes(OTP_EXPIRATION_MINUTES));
 
         NotificationEvent notificationEvent = NotificationEvent.builder()
                 .channel("EMAIL")
@@ -76,7 +78,7 @@ public class AuthController {
         kafkaTemplate.send("send-otp", notificationEvent);
 
         ApiResponse response = ApiResponse.builder()
-                .message("Registration successful. Please verify your email with the OTP sent.")
+                .message("Registration successful. Please verify your email with the OTP sent. It will expire in " + OTP_EXPIRATION_MINUTES + " minutes.")
                 .build();
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -98,14 +100,14 @@ public class AuthController {
             if (verificationCode != null) {
                 verificationCodeService.deleteVerificationCodeById(verificationCode);
             }
-            VerificationCode newVerificationCode = verificationCodeService.sendVerificationCode(user, VerificationType.EMAIL);
+            VerificationCode newVerificationCode = verificationCodeService.sendVerificationCode(user, VerificationType.EMAIL, LocalDateTime.now().plusMinutes(OTP_EXPIRATION_MINUTES));
             NotificationEvent notificationEvent = NotificationEvent.builder()
                     .channel("EMAIL")
                     .recipient(user.getEmail())
                     .content(newVerificationCode.getOtp())
                     .build();
             kafkaTemplate.send("send-otp", notificationEvent);
-            throw new Exception("Email is not verified. Please check your email.");
+            throw new Exception("Email is not verified. A new OTP has been sent to your email. It will expire in " + OTP_EXPIRATION_MINUTES + " minutes.");
         }
 
         SecurityContextHolder.getContext().setAuthentication(auth);
@@ -120,7 +122,7 @@ public class AuthController {
                 twoFactorOTPService.deleteTwoFactorOTP(oldTwoFactorOTP);
             }
 
-            TwoFactorOTP newTwoFactorOtp = twoFactorOTPService.createTwoFactorOTP(user, otp, jwt);
+            TwoFactorOTP newTwoFactorOtp = twoFactorOTPService.createTwoFactorOTP(user, otp, jwt, LocalDateTime.now().plusMinutes(OTP_EXPIRATION_MINUTES));
 
             NotificationEvent notificationEvent = NotificationEvent.builder()
                     .channel("EMAIL")
@@ -129,7 +131,7 @@ public class AuthController {
                     .build();
             kafkaTemplate.send("send-otp", notificationEvent);
             AuthResponse res = AuthResponse.builder()
-                    .message("Two factor authentication is enable")
+                    .message("Two factor authentication is enabled. OTP sent to your email. It will expire in " + OTP_EXPIRATION_MINUTES + " minutes.")
                     .isTwoFactorAuthEnabled(true)
                     .session(newTwoFactorOtp.getId())
                     .build();
@@ -158,6 +160,14 @@ public class AuthController {
     @PostMapping("/two-factor/otp")
     public ResponseEntity<AuthResponse> verifySigningOtp(@RequestParam String otp, @RequestParam String id) throws Exception {
         TwoFactorOTP twoFactorOTP = twoFactorOTPService.findById(id);
+        if (twoFactorOTP == null) {
+            throw new Exception("Invalid session ID");
+        }
+
+        if (twoFactorOTP.getExpirationTime().isBefore(LocalDateTime.now())) {
+            twoFactorOTPService.deleteTwoFactorOTP(twoFactorOTP);
+            throw new Exception("OTP has expired");
+        }
 
         if(twoFactorOTPService.verifyTwoFactorOTP(twoFactorOTP, otp)) {
             AuthResponse res = AuthResponse.builder()
@@ -184,7 +194,7 @@ public class AuthController {
         if(oldForgotPasswordOTP != null) {
             forgotPasswordService.deleteOTP(oldForgotPasswordOTP);
         }
-        ForgotPasswordOTP newforgotPasswordOTP = forgotPasswordService.createOTP(user, id, otp, request.getVerificationType(), request.getEmail());
+        ForgotPasswordOTP newforgotPasswordOTP = forgotPasswordService.createOTP(user, id, otp, request.getVerificationType(), request.getEmail(), LocalDateTime.now().plusMinutes(OTP_EXPIRATION_MINUTES));
 
         if(request.getVerificationType().equals(VerificationType.EMAIL)) {
             NotificationEvent notificationEvent = NotificationEvent.builder()
@@ -196,7 +206,7 @@ public class AuthController {
         }
         AuthResponse response = AuthResponse.builder()
                 .session(newforgotPasswordOTP.getId())
-                .message("forgot password otp sent successfully.")
+                .message("Forgot password OTP sent successfully. It will expire in " + OTP_EXPIRATION_MINUTES + " minutes.")
                 .build();
         return new ResponseEntity<>(response,HttpStatus.OK);
     }
@@ -208,6 +218,11 @@ public class AuthController {
         ForgotPasswordOTP forgotPasswordOTP = forgotPasswordService.findById(sessionId);
         if (forgotPasswordOTP == null) {
             throw new Exception("Invalid session ID");
+        }
+
+        if (forgotPasswordOTP.getExpirationTime().isBefore(LocalDateTime.now())) {
+            forgotPasswordService.deleteOTP(forgotPasswordOTP);
+            throw new Exception("OTP has expired");
         }
 
         if (!forgotPasswordOTP.getOtp().equals(otp)) {
@@ -247,7 +262,16 @@ public class AuthController {
         }
 
         VerificationCode verificationCode = verificationCodeService.getVerificationCodeByUser(user.getId());
-        if (verificationCode == null || !verificationCode.getOtp().equals(otp)) {
+        if (verificationCode == null) {
+            throw new Exception("No verification code found");
+        }
+
+        if (verificationCode.getExpirationTime().isBefore(LocalDateTime.now())) {
+            verificationCodeService.deleteVerificationCodeById(verificationCode);
+            throw new Exception("OTP has expired");
+        }
+
+        if (!verificationCode.getOtp().equals(otp)) {
             throw new Exception("Invalid OTP");
         }
 

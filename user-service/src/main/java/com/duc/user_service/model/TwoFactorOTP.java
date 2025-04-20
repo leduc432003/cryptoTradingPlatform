@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,4 +25,5 @@ public class TwoFactorOTP {
     private User user;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String jwt;
+    private LocalDateTime expirationTime;
 }

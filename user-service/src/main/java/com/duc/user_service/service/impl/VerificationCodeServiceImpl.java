@@ -9,6 +9,7 @@ import com.duc.user_service.utils.OtpUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -17,11 +18,12 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
     private final VerificationCodeRepository verificationCodeRepository;
 
     @Override
-    public VerificationCode sendVerificationCode(User user, VerificationType verificationType) {
+    public VerificationCode sendVerificationCode(User user, VerificationType verificationType, LocalDateTime expirationTime) {
         VerificationCode verificationCode1 = VerificationCode.builder()
                 .otp(OtpUtils.generateOtp())
                 .verificationType(verificationType)
                 .user(user)
+                .expirationTime(expirationTime)
                 .build();
 
         return verificationCodeRepository.save(verificationCode1);

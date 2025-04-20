@@ -7,6 +7,7 @@ import com.duc.user_service.service.TwoFactorOTPService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,7 +17,7 @@ public class TwoFactorOTPServiceImpl implements TwoFactorOTPService {
     private final TwoFactorOtpRepository twoFactorOtpRepository;
 
     @Override
-    public TwoFactorOTP createTwoFactorOTP(User user, String otp, String jwt) {
+    public TwoFactorOTP createTwoFactorOTP(User user, String otp, String jwt, LocalDateTime expirationTime) {
         UUID uuid = UUID.randomUUID();
         String id = uuid.toString();
         TwoFactorOTP twoFactorOTP = TwoFactorOTP.builder()
@@ -24,6 +25,7 @@ public class TwoFactorOTPServiceImpl implements TwoFactorOTPService {
                 .jwt(jwt)
                 .id(id)
                 .user(user)
+                .expirationTime(expirationTime)
                 .build();
         return twoFactorOtpRepository.save(twoFactorOTP);
     }
