@@ -135,144 +135,180 @@ public class ChatbotServiceImpl implements ChatbotService {
 
     @Override
     public ApiResponse getCoinDetails(String prompt) throws Exception {
-        FunctionResponse res = getFunctionResponse(prompt);
-        if(res.getFunctionName().equals("getWithdrawalSteps")) {
-            ApiResponse withdrawalStepsResponse = new ApiResponse();
-            String withdrawalSteps = "Các bước để thực hiện rút tiền:\n" +
-                    "1. Đăng nhập vào tài khoản của bạn.\n" +
-                    "2. Truy cập vào ví của bạn.\n" +
-                    "3. Chọn mục 'Rút tiền' hoặc 'Withdrawal' từ menu.\n" +
-                    "4. Nhập số tiền bạn muốn rút và nhập số tài khoản ngân hàng(nếu chưa nhập).\n" +
-                    "5. Kiểm tra lại thông tin giao dịch và xác nhận.\n" +
-                    "6. Chờ xác nhận từ admin.\n" +
-                    "7. Hoàn thành giao dịch và nhận tiền vào tài khoản của bạn.\n" +
-                    "Nếu cần hỗ trợ liên hệ email: anhducle4433@gmail.com .\n";
-            String response = simpleChat(withdrawalSteps);
-            withdrawalStepsResponse.setMessage(response);
-            return withdrawalStepsResponse;
-        } else if (res.getFunctionName().equals("getDepositSteps")) {
-            ApiResponse depositStepsResponse = new ApiResponse();
-            String depositSteps = "Các bước để thực hiện nạp tiền:\n" +
-                    "1. Đăng nhập vào tài khoản của bạn.\n" +
-                    "2. Truy cập vào ví của bạn.\n" +
-                    "3. Chọn mục 'Nạp tiền' hoặc 'Deposit' từ menu.\n" +
-                    "4. Nhập số tiền bạn muốn nạp.\n" +
-                    "5. Quét mã QR để chuyển khoản và không được thay đổi thông tin chuyển khoản.\n" +
-                    "6. Chờ hệ thống xác nhận và hoàn tất giao dịch.\n" +
-                    "7. Tiền sẽ được nạp vào tài khoản của bạn. \n" +
-                    "Nếu cần hỗ trợ liên hệ email: anhducle4433@gmail.com .\n";
-            String response = simpleChat(depositSteps);
-            depositStepsResponse.setMessage(response);
-            return depositStepsResponse;
-        } else if (res.getFunctionName().equals("getTransactionSteps")) {
-            ApiResponse transactionStepsResponse = new ApiResponse();
-            String transactionSteps = "Các bước để thực hiện giao dịch:\n" +
-                    "1. Đăng nhập vào tài khoản của bạn.\n" +
-                    "2. Truy cập vào coin muốn giao dịch.\n" +
-                    "3. Chọn 'Giao dịch' hoặc 'Trade'.\n" +
-                    "4. Chọn loại giao dịch bạn muốn thực hiện (Mua hoặc Bán).\n" +
-                    "5. Chọn loại lệnh giao dịch phù hợp:\n" +
-                    "   - **Lệnh Market**: Mua/Bán ngay với giá thị trường hiện tại.\n" +
-                    "   - **Lệnh Limit**: Đặt giá mua/bán mong muốn, lệnh chỉ khớp khi giá thị trường đạt đến mức đó.\n" +
-                    "   - **Lệnh Stop-Limit**: Đặt mức giá kích hoạt (Stop Price), khi đạt mức này, một lệnh Limit sẽ được đặt ra.\n" +
-                    "6. Nhập số lượng coin bạn muốn giao dịch và xác nhận.\n" +
-                    "7. Chờ hệ thống xử lý và hoàn tất giao dịch.\n" +
-                    "8. Xem kết quả giao dịch trong tài khoản của bạn.";
-            String response = simpleChat(transactionSteps);
-            transactionStepsResponse.setMessage(response);
-            return transactionStepsResponse;
-        }
+        ApiResponse response = new ApiResponse();
 
-        String coinId = coinService.getCoinId(res.getCurrencyName().toLowerCase());
-        CoinDto apiResponse = makeApiRequest(coinId);
-        String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_API_KEY;
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        String body = new JSONObject()
-                .put("contents", new JSONArray()
-                        .put(new JSONObject()
-                                .put("role", "user")
-                                .put("parts", new JSONArray()
-                                        .put(new JSONObject()
-                                                .put("text", prompt))))
-                        .put(new JSONObject()
-                                .put("role", "model")
-                                .put("parts", new JSONArray()
-                                        .put(new JSONObject()
-                                                .put("functionCall", new JSONObject()
-                                                        .put("name", "getCoinDetails")
-                                                        .put("args", new JSONObject()
-                                                                .put("currencyName", res.getCurrencyName())
-                                                                .put("currencyData", res.getCurrencyData()))))))
-                        .put(new JSONObject()
-                                .put("role", "function")
-                                .put("parts", new JSONArray()
-                                        .put(new JSONObject()
-                                                .put("functionResponse", new JSONObject()
-                                                        .put("name", "getCoinDetails")
-                                                        .put("response", new JSONObject()
-                                                                .put("name", "getCoinDetails")
-                                                                .put("content", apiResponse))))))
-                )
-                .put("tools", new JSONArray()
-                        .put(new JSONObject()
-                                .put("functionDeclarations", new JSONArray()
-                                        .put(new JSONObject()
-                                                .put("name", "getCoinDetails")
-                                                .put("description", "Get crypto currency data from given currency object.")
-                                                .put("parameters", new JSONObject()
-                                                        .put("type", "OBJECT")
-                                                        .put("properties", new JSONObject()
-                                                                .put("currencyName", new JSONObject()
-                                                                        .put("type", "STRING")
-                                                                        .put("description", "The currency Name, " +
-                                                                                "id, symbol."))
-                                                                .put("currencyData", new JSONObject()
-                                                                        .put("type", "STRING")
-                                                                        .put("description",
-                                                                                "The currency data id, " +
-                                                                                        "symbol, current price, " +
-                                                                                        "image, " +
-                                                                                        "description, " +
-                                                                                        "market cap rank, " +
-                                                                                        "market cap extra, " +
-                                                                                        "total volume, " +
-                                                                                        "high 24h, " +
-                                                                                        "low 24h, " +
-                                                                                        "price change 24h, " +
-                                                                                        "price change percentage 24h, " +
-                                                                                        "circulating supply, " +
-                                                                                        "total supply, " +
-                                                                                        "ath, " +
-                                                                                        "extra..."
-                                                                        )))
-                                                        .put("required", new JSONArray()
-                                                                .put("currencyName")
-                                                                .put("currencyData")))))))
-                .toString();
-        HttpEntity<String> request = new HttpEntity<>(body, headers);
-        RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<String> response = restTemplate.postForEntity(GEMINI_API_URL, request, String.class);
-        String responseBody = response.getBody();
-        System.out.println("-------" + responseBody);
-        JSONObject jsonObject = new JSONObject(responseBody);
-        JSONArray candidatesArray = jsonObject.getJSONArray("candidates");
+        try {
+            // Lấy phản hồi chức năng
+            FunctionResponse res = getFunctionResponse(prompt);
 
-        if (candidatesArray.length() > 0) {
-            JSONObject candidateObject = candidatesArray.getJSONObject(0);
-            JSONObject contentObject = candidateObject.getJSONObject("content");
-            JSONArray partsArray = contentObject.getJSONArray("parts");
-
-            if (partsArray.length() > 0) {
-                JSONObject partObject = partsArray.getJSONObject(0);
-                String text = partObject.getString("text");
-
-                ApiResponse ans = new ApiResponse();
-                ans.setMessage(text);
-                return ans;
+            // Kiểm tra nếu FunctionResponse là null
+            if (res == null) {
+                String errorMessage = "Xin lỗi, tôi không thể xử lý yêu cầu của bạn lúc này. Vui lòng thử lại sau hoặc liên hệ hỗ trợ qua email: anhducle4433@gmail.com.";
+                String friendlyResponse = simpleChat(errorMessage);
+                response.setMessage(friendlyResponse);
+                return response;
             }
+
+            // Xử lý các tên chức năng khác nhau
+            String functionName = res.getFunctionName();
+            if ("text_response".equals(functionName)) {
+                // Xử lý phản hồi văn bản từ API
+                String text = res.getCurrencyName(); // Lấy văn bản từ currencyName
+                String friendlyResponse = simpleChat(text); // Tạo phản hồi thân thiện
+                response.setMessage(friendlyResponse);
+                return response;
+            } else if ("getWithdrawalSteps".equals(functionName)) {
+                String withdrawalSteps = "Các bước để thực hiện rút tiền:\n" +
+                        "1. Đăng nhập vào tài khoản của bạn.\n" +
+                        "2. Truy cập vào ví của bạn.\n" +
+                        "3. Chọn mục 'Rút tiền' hoặc 'Withdrawal' từ menu.\n" +
+                        "4. Nhập số tiền bạn muốn rút và nhập số tài khoản ngân hàng (nếu chưa nhập).\n" +
+                        "5. Kiểm tra lại thông tin giao dịch và xác nhận.\n" +
+                        "6. Chờ xác nhận từ admin.\n" +
+                        "7. Hoàn thành giao dịch và nhận tiền vào tài khoản của bạn.\n" +
+                        "Nếu cần hỗ trợ liên hệ email: anhducle4433@gmail.com .\n";
+                String friendlyResponse = simpleChat(withdrawalSteps);
+                response.setMessage(friendlyResponse);
+                return response;
+            } else if ("getDepositSteps".equals(functionName)) {
+                String depositSteps = "Các bước để thực hiện nạp tiền:\n" +
+                        "1. Đăng nhập vào tài khoản của bạn.\n" +
+                        "2. Truy cập vào ví của bạn.\n" +
+                        "3. Chọn mục 'Nạp tiền' hoặc 'Deposit' từ menu.\n" +
+                        "4. Nhập số tiền bạn muốn nạp.\n" +
+                        "5. Quét mã QR để chuyển khoản và không được thay đổi thông tin chuyển khoản.\n" +
+                        "6. Chờ hệ thống xác nhận và hoàn tất giao dịch.\n" +
+                        "7. Tiền sẽ được nạp vào tài khoản của bạn. \n" +
+                        "Nếu cần hỗ trợ liên hệ email: anhducle4433@gmail.com .\n";
+                String friendlyResponse = simpleChat(depositSteps);
+                response.setMessage(friendlyResponse);
+                return response;
+            } else if ("getTransactionSteps".equals(functionName)) {
+                String transactionSteps = "Các bước để thực hiện giao dịch:\n" +
+                        "1. Đăng nhập vào tài khoản của bạn.\n" +
+                        "2. Truy cập vào coin muốn giao dịch.\n" +
+                        "3. Chọn 'Giao dịch' hoặc 'Trade'.\n" +
+                        "4. Chọn loại giao dịch bạn muốn thực hiện (Mua hoặc Bán).\n" +
+                        "5. Chọn loại lệnh giao dịch phù hợp:\n" +
+                        "   - **Lệnh Market**: Mua/Bán ngay với giá thị trường hiện tại.\n" +
+                        "   - **Lệnh Limit**: Đặt giá mua/bán mong muốn, lệnh chỉ khớp khi giá thị trường đạt đến mức đó.\n" +
+                        "   - **Lệnh Stop-Limit**: Đặt mức giá kích hoạt (Stop Price), khi đạt mức này, một lệnh Limit sẽ được đặt ra.\n" +
+                        "6. Nhập số lượng coin bạn muốn giao dịch và xác nhận.\n" +
+                        "7. Chờ hệ thống xử lý và hoàn tất giao dịch.\n" +
+                        "8. Xem kết quả giao dịch trong tài khoản của bạn.";
+                String friendlyResponse = simpleChat(transactionSteps);
+                response.setMessage(friendlyResponse);
+                return response;
+            }
+
+            // Xử lý chức năng getCoinDetails
+            String coinId = coinService.getCoinId(res.getCurrencyName().toLowerCase());
+            if (coinId == null || coinId.isEmpty()) {
+                String errorMessage = "Không tìm thấy thông tin về đồng tiền này. Vui lòng kiểm tra lại tên đồng tiền hoặc thử lại sau.";
+                String friendlyResponse = simpleChat(errorMessage);
+                response.setMessage(friendlyResponse);
+                return response;
+            }
+
+            CoinDto apiResponse = makeApiRequest(coinId);
+
+            // Gửi yêu cầu tiếp theo tới Gemini để tạo phản hồi thân thiện
+            String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" + GEMINI_API_KEY;
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            String body = new JSONObject()
+                    .put("contents", new JSONArray()
+                            .put(new JSONObject()
+                                    .put("role", "user")
+                                    .put("parts", new JSONArray()
+                                            .put(new JSONObject()
+                                                    .put("text", prompt))))
+                            .put(new JSONObject()
+                                    .put("role", "model")
+                                    .put("parts", new JSONArray()
+                                            .put(new JSONObject()
+                                                    .put("functionCall", new JSONObject()
+                                                            .put("name", "getCoinDetails")
+                                                            .put("args", new JSONObject()
+                                                                    .put("currencyName", res.getCurrencyName())
+                                                                    .put("currencyData", res.getCurrencyData()))))))
+                            .put(new JSONObject()
+                                    .put("role", "function")
+                                    .put("parts", new JSONArray()
+                                            .put(new JSONObject()
+                                                    .put("functionResponse", new JSONObject()
+                                                            .put("name", "getCoinDetails")
+                                                            .put("response", new JSONObject()
+                                                                    .put("name", "getCoinDetails")
+                                                                    .put("content", new ObjectMapper().writeValueAsString(apiResponse))))))))
+                    .put("tools", new JSONArray()
+                            .put(new JSONObject()
+                                    .put("functionDeclarations", new JSONArray()
+                                            .put(new JSONObject()
+                                                    .put("name", "getCoinDetails")
+                                                    .put("description", "Lấy dữ liệu tiền điện tử từ đối tượng tiền tệ được cung cấp.")
+                                                    .put("parameters", new JSONObject()
+                                                            .put("type", "OBJECT")
+                                                            .put("properties", new JSONObject()
+                                                                    .put("currencyName", new JSONObject()
+                                                                            .put("type", "STRING")
+                                                                            .put("description", "Tên tiền tệ, id, ký hiệu."))
+                                                                    .put("currencyData", new JSONObject()
+                                                                            .put("type", "STRING")
+                                                                            .put("description", "Dữ liệu tiền tệ bao gồm id, ký hiệu, giá hiện tại, hình ảnh, mô tả, xếp hạng vốn hóa thị trường, vốn hóa thị trường, khối lượng giao dịch, giá cao 24h, giá thấp 24h, thay đổi giá 24h, phần trăm thay đổi giá 24h, nguồn cung lưu hành, tổng nguồn cung, giá cao nhất mọi thời đại, thêm...")))
+                                                            .put("required", new JSONArray()
+                                                                    .put("currencyName")
+                                                                    .put("currencyData")))))))
+                    .toString();
+
+            HttpEntity<String> request = new HttpEntity<>(body, headers);
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<String> responseEntity = restTemplate.postForEntity(GEMINI_API_URL, request, String.class);
+
+            // Kiểm tra trạng thái HTTP
+            if (!responseEntity.getStatusCode().is2xxSuccessful()) {
+                String errorMessage = "Có lỗi khi gọi API. Vui lòng thử lại sau hoặc liên hệ hỗ trợ qua email: anhducle4433@gmail.com.";
+                String friendlyResponse = simpleChat(errorMessage);
+                response.setMessage(friendlyResponse);
+                return response;
+            }
+
+            String responseBody = responseEntity.getBody();
+            System.out.println("-------" + responseBody);
+
+            JSONObject jsonObject = new JSONObject(responseBody);
+            JSONArray candidatesArray = jsonObject.getJSONArray("candidates");
+
+            if (candidatesArray.length() > 0) {
+                JSONObject candidateObject = candidatesArray.getJSONObject(0);
+                JSONObject contentObject = candidateObject.getJSONObject("content");
+                JSONArray partsArray = contentObject.getJSONArray("parts");
+
+                if (partsArray.length() > 0) {
+                    JSONObject partObject = partsArray.getJSONObject(0);
+                    String text = partObject.getString("text");
+
+                    response.setMessage(text);
+                    return response;
+                }
+            }
+
+            // Phản hồi dự phòng nếu không có phản hồi hợp lệ
+            String errorMessage = "Không thể lấy thông tin. Vui lòng thử lại hoặc liên hệ hỗ trợ qua email: anhducle4433@gmail.com.";
+            String friendlyResponse = simpleChat(errorMessage);
+            response.setMessage(friendlyResponse);
+            return response;
+
+        } catch (Exception e) {
+            // Xử lý mọi ngoại lệ không mong muốn
+            System.out.println("Lỗi trong getCoinDetails: " + e.getMessage());
+            e.printStackTrace();
+            String errorMessage = "Rất tiếc, đã có lỗi xảy ra khi xử lý yêu cầu của bạn. Vui lòng thử lại hoặc liên hệ hỗ trợ qua email: anhducle4433@gmail.com.";
+            String friendlyResponse = simpleChat(errorMessage);
+            response.setMessage(friendlyResponse);
+            return response;
         }
-        return null;
     }
 
     @Override
@@ -311,8 +347,7 @@ public class ChatbotServiceImpl implements ChatbotService {
                         .put(new JSONObject()
                                 .put("parts", new JSONArray()
                                         .put(new JSONObject()
-                                                .put("text", prompt)
-                                        ))))
+                                                .put("text", prompt)))))
                 .put("tools", new JSONArray()
                         .put(new JSONObject()
                                 .put("functionDeclarations", new JSONArray()
@@ -324,36 +359,10 @@ public class ChatbotServiceImpl implements ChatbotService {
                                                         .put("properties", new JSONObject()
                                                                 .put("currencyName", new JSONObject()
                                                                         .put("type", "STRING")
-                                                                        .put("description", "The currency name, " +
-                                                                                "id, symbol."))
+                                                                        .put("description", "The currency name, id, symbol."))
                                                                 .put("currencyData", new JSONObject()
                                                                         .put("type", "STRING")
-                                                                        .put("description", "Currency Data id, " +
-                                                                                "symbol, " +
-                                                                                "name, " +
-                                                                                "image, " +
-                                                                                "description, " +
-                                                                                "current price," +
-                                                                                "market cap, " +
-                                                                                "market cap rank, " +
-                                                                                "fully diluted valuation, " +
-                                                                                "total volume, high 24h, " +
-                                                                                "price change percentage 1h in currency, " +
-                                                                                "price change percentage 7d in currency, " +
-                                                                                "low 24h, price change 24h, " +
-                                                                                "price change percentage 24h, " +
-                                                                                "market cap change 24h, " +
-                                                                                "market cap change percentage 24h, " +
-                                                                                "circulating supply, " +
-                                                                                "total supply, " +
-                                                                                "max supply, " +
-                                                                                "ath, " +
-                                                                                "ath change percentage, " +
-                                                                                "ath date, " +
-                                                                                "atl, " +
-                                                                                "atl change percentage, " +
-                                                                                "atl date, last updated."
-                                                                        )))
+                                                                        .put("description", "Currency Data id, symbol, name, image, description, current price, market cap, market cap rank, fully diluted valuation, total volume, high 24h, price change percentage 1h in currency, price change percentage 7d in currency, low 24h, price change 24h, price change percentage 24h, market cap change 24h, market cap change percentage 24h, circulating supply, total supply, max supply, ath, ath change percentage, ath date, atl, atl change percentage, atl date, last updated.")))
                                                         .put("required", new JSONArray()
                                                                 .put("currencyName")
                                                                 .put("currencyData"))))
@@ -365,8 +374,7 @@ public class ChatbotServiceImpl implements ChatbotService {
                                                         .put("properties", new JSONObject()
                                                                 .put("prompt", new JSONObject()
                                                                         .put("type", "STRING")
-                                                                        .put("description", "The question or prompt for withdrawal steps."))
-                                                        )
+                                                                        .put("description", "The question or prompt for withdrawal steps.")))
                                                         .put("required", new JSONArray().put("prompt"))))
                                         .put(new JSONObject()
                                                 .put("name", "getDepositSteps")
@@ -387,10 +395,8 @@ public class ChatbotServiceImpl implements ChatbotService {
                                                                 .put("prompt", new JSONObject()
                                                                         .put("type", "STRING")
                                                                         .put("description", "The question or prompt for transaction steps.")))
-                                                        .put("required", new JSONArray().put("prompt"))))
-                                )
-                        ))
-                ;
+                                                        .put("required", new JSONArray().put("prompt")))))));
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBodyJson.toString(), headers);
@@ -401,6 +407,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         JSONObject jsonObject = new JSONObject(responseBody);
         JSONArray candidatesArray = jsonObject.getJSONArray("candidates");
         System.out.println(candidatesArray);
+
         try {
             if (candidatesArray.length() > 0) {
                 JSONObject candidateObject = candidatesArray.getJSONObject(0);
@@ -409,53 +416,65 @@ public class ChatbotServiceImpl implements ChatbotService {
 
                 if (partsArray.length() > 0) {
                     JSONObject partObject = partsArray.getJSONObject(0);
-                    JSONObject functionCallObject = partObject.getJSONObject("functionCall");
 
-                    String functionName = functionCallObject.getString("name");
-                    JSONObject argsObject = functionCallObject.getJSONObject("args");
+                    // Check if the part contains a functionCall
+                    if (partObject.has("functionCall")) {
+                        JSONObject functionCallObject = partObject.getJSONObject("functionCall");
+                        String functionName = functionCallObject.getString("name");
+                        JSONObject argsObject = functionCallObject.getJSONObject("args");
 
+                        if ("getCoinDetails".equals(functionName)) {
+                            String currencyData = argsObject.getString("currencyData");
+                            String currencyName = argsObject.getString("currencyName");
 
-                    if ("getCoinDetails".equals(functionName)) {
-                        String currencyData = argsObject.getString("currencyData");
-                        String currencyName = argsObject.getString("currencyName");
+                            FunctionResponse res = new FunctionResponse();
+                            res.setFunctionName(functionName);
+                            res.setCurrencyName(currencyName);
+                            res.setCurrencyData(currencyData);
+                            return res;
+                        } else if ("getWithdrawalSteps".equals(functionName)) {
+                            String promptValue = argsObject.getString("prompt");
+
+                            System.out.println("Function Name: " + functionName);
+                            System.out.println("Prompt: " + promptValue);
+
+                            FunctionResponse res = new FunctionResponse();
+                            res.setFunctionName(functionName);
+                            res.setCurrencyName(promptValue);
+                            return res;
+                        } else if ("getDepositSteps".equals(functionName)) {
+                            String promptValue = argsObject.getString("prompt");
+
+                            System.out.println("Function Name: " + functionName);
+                            System.out.println("Prompt: " + promptValue);
+
+                            FunctionResponse res = new FunctionResponse();
+                            res.setFunctionName(functionName);
+                            res.setCurrencyName(promptValue);
+                            return res;
+                        } else if ("getTransactionSteps".equals(functionName)) {
+                            String promptValue = argsObject.getString("prompt");
+
+                            FunctionResponse res = new FunctionResponse();
+                            res.setFunctionName(functionName);
+                            res.setCurrencyName(promptValue);
+                            return res;
+                        }
+                    } else if (partObject.has("text")) {
+                        // Handle text response when functionCall is not present
+                        String textResponse = partObject.getString("text");
 
                         FunctionResponse res = new FunctionResponse();
-                        res.setFunctionName(functionName);
-                        res.setCurrencyName(currencyName);
-                        res.setCurrencyData(currencyData);
-                        return res;
-                    } else if ("getWithdrawalSteps".equals(functionName)) {
-                        String promptValue = argsObject.getString("prompt");
-
-                        System.out.println("Function Name: " + functionName);
-                        System.out.println("Prompt: " + promptValue);
-
-                        FunctionResponse res = new FunctionResponse();
-                        res.setFunctionName(functionName);
-                        res.setCurrencyName(promptValue);
-                        return res;
-                    } else if ("getDepositSteps".equals(functionName)) {
-                        String promptValue = argsObject.getString("prompt");
-
-                        System.out.println("Function Name: " + functionName);
-                        System.out.println("Prompt: " + promptValue);
-
-                        FunctionResponse res = new FunctionResponse();
-                        res.setFunctionName(functionName);
-                        res.setCurrencyName(promptValue);
-                        return res;
-                    } else if ("getTransactionSteps".equals(functionName)) {
-                        String promptValue = argsObject.getString("prompt");
-
-                        FunctionResponse res = new FunctionResponse();
-                        res.setFunctionName(functionName);
-                        res.setCurrencyName(promptValue);
+                        res.setFunctionName("text_response"); // Use a generic name or null
+                        res.setCurrencyName(textResponse);
+                        System.out.println(res);// Store text in currencyName or a new field
                         return res;
                     }
                 }
             }
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("Error processing response: " + e.getMessage());
+            e.printStackTrace();
         }
         return null;
     }
