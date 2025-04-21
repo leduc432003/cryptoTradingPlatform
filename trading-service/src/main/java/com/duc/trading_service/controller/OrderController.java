@@ -137,7 +137,8 @@ public class OrderController {
             start = (startDate != null) ? LocalDate.parse(startDate) : LocalDate.now();
             end = (endDate != null) ? LocalDate.parse(endDate) : start;
         } else {
-            return orderItemService.getTotalTransactionsByCoinInDateRange(null, null);
+            start = LocalDate.now();
+            end = LocalDate.now();
         }
 
         return orderItemService.getTotalTransactionsByCoinInDateRange(start, end);
