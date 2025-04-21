@@ -92,9 +92,16 @@ public class UserController {
         User user = userService.findUserProfileByJwt(jwt);
         VerificationCode verificationCode = verificationCodeService.getVerificationCodeByUser(user.getId());
 
-        if(verificationCode == null) {
-            verificationCode = verificationCodeService.sendVerificationCode(user, verificationType, LocalDateTime.now().plusMinutes(OTP_EXPIRATION_MINUTES));
+        if (verificationCode != null) {
+            verificationCodeService.deleteVerificationCodeById(verificationCode);
         }
+
+        verificationCode = verificationCodeService.sendVerificationCode(
+                user,
+                verificationType,
+                LocalDateTime.now().plusMinutes(OTP_EXPIRATION_MINUTES)
+        );
+
         if(verificationType.equals(VerificationType.EMAIL)) {
             NotificationEvent notificationEvent = NotificationEvent.builder()
                     .channel("EMAIL")
