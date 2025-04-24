@@ -74,6 +74,13 @@ git clone https://github.com/leduc432003/cryptoTradingPlatform.git
 # Navigate to the project directory
 cd crypto-trading-platform
 
+# Start the Docker-compose
+docker compose up
+
+# Start the Config Server
+cd config-server
+mvn spring-boot:run
+
 # Start the Eureka Server
 cd eureka-server
 mvn spring-boot:run
