@@ -3,6 +3,12 @@
 ## Project Overview
 This project is a microservices-based cryptocurrency trading platform. It includes various services such as User Service, Coin Service, Wallet Service, Asset Management Service, Trading Service, Watchlist Service, Withdrawal Service, Payment Service, and Security & Compliance Service.
 
+## 🧩 System Architecture
+
+The following diagram illustrates the microservices architecture of the platform:
+
+![Microservices Architecture](https://raw.githubusercontent.com/leduc432003/cryptoTradingPlatform/main/microservices.png)
+
 ## Key Features
 - **Microservice Architecture**: Utilized microservices to separate functionalities and manage scalability.
 - **Role-Based Authorization**: Implemented secure access control based on user roles.
