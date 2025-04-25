@@ -9,6 +9,12 @@ The following diagram illustrates the microservices architecture of the platform
 
 ![Microservices Architecture](https://raw.githubusercontent.com/leduc432003/cryptoTradingPlatform/main/microservices.png)
 
+
+## User Interface
+The user interface of the cryptocurrency trading platform is designed to provide a seamless and intuitive experience. Key features in the UI include:
+
+For a detailed view of the UI design, you can refer to the Figma design [here](https://www.figma.com/design/UsTNyDvR0qZWVnbjh3TQ8H/KLTN?node-id=0-1&p=f&t=zQwWK2f6saBApV6s-0).
+
 ## Key Features
 - **Microservice Architecture**: Utilized microservices to separate functionalities and manage scalability.
 - **Role-Based Authorization**: Implemented secure access control based on user roles.
